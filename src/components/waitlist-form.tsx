@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { toast } from "sonner";
 import * as motion from "motion/react-client";
+import { FaPaperPlane } from "react-icons/fa";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -105,7 +106,7 @@ export function WaitlistForm() {
     <Form {...form}>
       <motion.form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="relative flex w-full max-w-md flex-col gap-3 sm:flex-row"
+        className="relative flex w-full max-w-[584px] flex-row items-center gap-0 rounded-full border bg-white shadow-sm hover:shadow-md transition-shadow duration-200"
         initial={{ opacity: 0, y: 10, filter: "blur(8px)" }}
         animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         transition={{ duration: 2, type: "spring" }}
@@ -120,29 +121,28 @@ export function WaitlistForm() {
                   placeholder="Enter your email"
                   type="email"
                   autoComplete="email"
-                  className="h-11 rounded-md"
+                  className="h-11 w-full rounded-full border-0 bg-transparent px-6 text-base focus:ring-0 focus-visible:ring-0 focus-visible:border-0"
                   aria-label="Email address for waitlist"
                   aria-invalid={!!form.formState.errors.email}
                   {...field}
                 />
               </FormControl>
-              <FormMessage className="absolute pt-1 text-xs text-red-600 dark:text-red-500" />
+              <FormMessage className="absolute pt-2 text-xs text-red-600 dark:text-red-500" />
             </FormItem>
           )}
         />
         <Button
           type="submit"
           disabled={isSubmitting}
-          className="h-11 shrink-0 rounded-md px-6 font-medium"
+          className="mr-1 h-10 w-10 rounded-full flex items-center justify-center bg-transparent hover:bg-gray-100 p-0"
           aria-live="polite"
+          variant="ghost"
+          size="icon"
         >
           {isSubmitting ? (
-            <>
-              <Loader2 className="animate-spin" />
-              Joining...
-            </>
+            <Loader2 className="animate-spin text-gray-600" />
           ) : (
-            "Join Waitlist"
+            <FaPaperPlane className="text-base text-gray-600" />
           )}
         </Button>
       </motion.form>
