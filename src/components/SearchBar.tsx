@@ -25,20 +25,19 @@ export default function SearchBar({ onSearch, initialQuery = '', isConversationM
   return (
     <div className={`w-full ${isConversationMode ? '' : 'space-y-4'}`}>
       <form onSubmit={handleSubmit} className={`search-container ${isConversationMode ? 'conversation' : ''} flex justify-center`}>
-        <div className={`relative ${!isConversationMode ? 'max-w-xl w-full' : 'w-full'}`}>
+        <div className={`relative w-full`}>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className={`
-              search-input 
-              ${isConversationMode ? 'conversation' : ''} 
-              ${!isConversationMode ? 'h-12 rounded-full shadow-md border border-gray-200 dark:border-gray-700 focus:shadow-lg' : 'py-4'} 
-              px-4 pr-14 text-base w-full
+              search-input
+              h-10 rounded-lg border-none px-4 pr-12 text-base w-full bg-white dark:bg-gray-900 transition-colors
+              focus:outline-none focus:ring-0
             `}
             placeholder={
               isConversationMode ?
-                "Ask a follow-up question..." :
+                "Search with Steer" :
                 "Search the web..."
             }
             aria-label="Search"
@@ -46,14 +45,9 @@ export default function SearchBar({ onSearch, initialQuery = '', isConversationM
           />
           <button
             type="submit"
-            className={`
-              search-button 
-              ${isConversationMode ? 'conversation' : ''} 
-              ${!isConversationMode ? 'h-12 right-0 flex items-center justify-center' : 'right-0'} 
-              px-3
-            `}
-            style={{ aspectRatio: '1/1' }}
+            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-0 m-0 h-7 w-7 bg-transparent border-none"
             aria-label="Search"
+            tabIndex={-1}
           >
             <SearchIcon />
           </button>

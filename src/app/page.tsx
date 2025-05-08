@@ -4,7 +4,7 @@ import SplitText from "@/components/ui/split-text";
 
 export default function Home() {
   return (
-    <div className="flex flex-col h-screen justify-center items-center text-center">
+    <div className="flex flex-col min-h-screen items-center text-center pt-28">
       <div className="mb-8">
         <SplitText className="text-5xl tracking-tighter font-medium">
           Search with Steer
