@@ -25,6 +25,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Extract the actual search query if it's a structured prompt
+    let actualSearchQuery = query;
+    const userQuestionMatch = query.match(/USER QUESTION:\s*(.*?)(\n|$)/);
+    if (userQuestionMatch && userQuestionMatch[1]) {
+      actualSearchQuery = userQuestionMatch[1].trim();
+    }
+
     const exa = new Exa(exaApiKey);
     const openai = new OpenAI({
       apiKey: azureApiKey,
@@ -33,8 +40,8 @@ export async function POST(request: NextRequest) {
       defaultHeaders: { 'api-key': azureApiKey },
     });
     
-    // Get search results from Exa
-    const searchResults = await exa.searchAndContents(query, {
+    // Get search results from Exa using the actual query, not the prompt
+    const searchResults = await exa.searchAndContents(actualSearchQuery, {
       text: { "maxCharacters": 8000 }
     });
 
@@ -45,13 +52,8 @@ export async function POST(request: NextRequest) {
       url: result.url
     }));
 
-    // Generate a clean summary using Azure OpenAI
-    const completion = await openai.chat.completions.create({
-      model: azureDeployment,
-      messages: [
-        {
-          role: "system",
-          content: `You are a personalized search assistant that summarizes search results in a comprehensive, informative manner similar to Perplexity.
+    // Create a system prompt that emphasizes focusing on the user's question
+    const baseSystemPrompt = `You are a personalized search assistant that summarizes search results in a comprehensive, informative manner similar to Perplexity.
 
 You will be given the text content from multiple search results for a query. 
 Your task is to create ONE unified, coherent summary that synthesizes information from all sources.
@@ -63,32 +65,29 @@ INSTRUCTIONS:
 4. Use an informative, objective tone like Perplexity.
 5. Do not list individual sources separately - create one unified summary.
 6. Format your response with proper headings and paragraph spacing.
-7. Use bullet points (with • symbol) for listing features, benefits, steps, or key points.
-8. Ensure adequate whitespace between sections for maximum readability.
-9. DO NOT USE MARKDOWN FORMATTING. Do not use # for headings, * for emphasis, or any other markdown syntax.
-10. For headings, simply put them on their own line with a blank line before and after.
-11. For bullet points use only the • character at the start of the line.
-12. Avoid using any special formatting characters like hashtags (#), asterisks (*), or underscores (_).`
+7. Ensure adequate whitespace between sections for maximum readability.
+8. Keep responses concise while retaining all important information.
+9. IMPORTANT: Your primary task is to answer the user's specific question using the search results provided.`;
+
+    // Generate a clean summary using Azure OpenAI
+    const completion = await openai.chat.completions.create({
+      model: azureDeployment,
+      messages: [
+        {
+          role: "system",
+          content: baseSystemPrompt
         },
         {
           role: "user",
-          content: `Search Query: "${query}"
+          content: query.includes("USER QUESTION:") 
+            ? query 
+            : `Search Query: "${query}"
 
 Below are the combined contents from multiple search results:
 
 ${JSON.stringify(searchContext, null, 2)}
 
-Please provide ONE comprehensive summary that synthesizes information from all these sources to directly answer the search query. 
-
-IMPORTANT FORMATTING RULES:
-1. DO NOT USE ANY MARKDOWN SYNTAX like hashtags (#), asterisks (*), or underscores (_).
-2. For headings, simply write them as plain text with blank lines before and after.
-3. For bullet points, use only the • character at the start of each line.
-4. When creating lists, start each item with the • character and a space.
-5. Ensure proper paragraph spacing with blank lines between paragraphs.
-6. Organize information with clear sections and logical flow.
-7. Use plain text formatting only - NO special characters for formatting purposes.
-8. The summary should be directly readable without any processing - use normal text conventions only.`
+Please provide ONE comprehensive summary that synthesizes information from all these sources to directly answer the search query.`
         }
       ],
       max_tokens: 1500,

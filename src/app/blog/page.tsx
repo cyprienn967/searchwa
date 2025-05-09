@@ -1,10 +1,13 @@
 import Link from "next/link";
 import { getBlogPosts } from "@/lib/blog";
+import { Metadata } from "next";
 
-export const metadata = {
-  title: "Blog | Steer",
-  description: "Articles and insights about personalized search technology and the future of search engines",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  return {
+    title: "Blog | Steer",
+    description: "Articles and insights about personalized search technology and the future of search engines",
+  };
+}
 
 export default async function BlogPage() {
   const posts = await getBlogPosts();

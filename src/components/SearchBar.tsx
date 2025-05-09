@@ -1,24 +1,38 @@
 'use client';
 
-import { FormEvent, useState, useEffect } from 'react';
+import { FormEvent, useState, useEffect, useRef } from 'react';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
   initialQuery?: string;
   isConversationMode?: boolean;
+  disabled?: boolean;
 }
 
-export default function SearchBar({ onSearch, initialQuery = '', isConversationMode = false }: SearchBarProps) {
+export default function SearchBar({ 
+  onSearch, 
+  initialQuery = '', 
+  isConversationMode = false,
+  disabled = false 
+}: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
+  const initializedRef = useRef(false);
 
+  // Only set the query from initialQuery on first render
+  // This prevents the input from being cleared when the component re-renders
   useEffect(() => {
-    setQuery(initialQuery);
+    if (!initializedRef.current) {
+      setQuery(initialQuery);
+      initializedRef.current = true;
+    }
   }, [initialQuery]);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    if (query.trim()) {
+    if (query.trim() && !disabled) {
       onSearch(query.trim());
+      // Clear input after submitting
+      setQuery('');
     }
   };
 
@@ -32,22 +46,32 @@ export default function SearchBar({ onSearch, initialQuery = '', isConversationM
             onChange={(e) => setQuery(e.target.value)}
             className={`
               search-input
-              h-10 rounded-lg border-none px-4 pr-12 text-base w-full bg-white dark:bg-gray-900 transition-colors
+              h-10 rounded-lg border-none px-4 pr-12 text-base w-full 
+              ${disabled 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800' 
+                : 'bg-white dark:bg-gray-900'} 
+              transition-colors
               focus:outline-none focus:ring-0
             `}
             placeholder={
-              isConversationMode ?
-                "Search with Steer" :
-                "Search the web..."
+              disabled 
+                ? "Search limit reached"
+                : isConversationMode
+                  ? "Search with Steer"
+                  : "Search the web..."
             }
+            disabled={disabled}
             aria-label="Search"
             style={{ fontFamily: 'Inter, sans-serif' }}
           />
           <button
             type="submit"
-            className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-0 m-0 h-7 w-7 bg-transparent border-none"
+            className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-0 m-0 h-7 w-7 bg-transparent border-none ${
+              disabled ? 'opacity-50 cursor-not-allowed' : ''
+            }`}
             aria-label="Search"
             tabIndex={-1}
+            disabled={disabled}
           >
             <SearchIcon />
           </button>

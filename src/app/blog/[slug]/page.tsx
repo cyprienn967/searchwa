@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 export async function generateStaticParams() {
-  const posts = getBlogPosts();
+  const posts = await getBlogPosts();
   return posts.map((post) => ({
     slug: post.slug,
   }));
@@ -11,7 +11,7 @@ export async function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: { slug: string } }) {
   const slug = params.slug;
-  const post = getBlogPostBySlug(slug);
+  const post = await getBlogPostBySlug(slug);
   
   if (!post) {
     return {
@@ -49,7 +49,7 @@ function formatMarkdown(content: string) {
 
 export default async function BlogPostPage({ params }: { params: { slug: string } }) {
   const slug = params.slug;
-  const post = getBlogPostBySlug(slug);
+  const post = await getBlogPostBySlug(slug);
   
   if (!post) {
     notFound();
