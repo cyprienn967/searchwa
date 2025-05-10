@@ -146,7 +146,7 @@ export default function CommunityPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
+    <div className="w-full p-4">
       <h1 className="text-2xl font-bold mb-6">Community</h1>
       
       <div className="mb-8">
@@ -172,7 +172,7 @@ export default function CommunityPage() {
                 {comments
                   .filter(reply => reply.parentId === comment.id)
                   .map(reply => (
-                    <div key={reply.id} className="ml-8">
+                    <div key={reply.id} className="ml-12">
                       <Comment
                         comment={reply}
                         onReply={setReplyingTo}

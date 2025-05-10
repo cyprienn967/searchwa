@@ -29,7 +29,7 @@ export function CommentForm({ onSubmit, parentId, onCancel }: CommentFormProps) 
       <div className="flex gap-2">
         <button
           type="submit"
-          className="px-4 py-2 text-white bg-blue-600 rounded-md hover:bg-blue-700"
+          className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
         >
           {parentId ? 'Reply' : 'Post'}
         </button>
