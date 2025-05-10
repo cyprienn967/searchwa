@@ -1,10 +1,4 @@
-install dependencies with
+npm install
+npm run dev
 
-bun i
-
-URL and shit should alr be set in .env.local
-
-run server with
-
-bun dev
 

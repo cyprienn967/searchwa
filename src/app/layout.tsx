@@ -52,6 +52,13 @@ export default function RootLayout({
                 >
                   blog
                 </Link>
+                <Link
+                  href="/community"
+                  className="text-base text-black hover:bg-gray-100 px-2 py-1 rounded transition"
+                  style={{ fontFamily: "Times New Roman, Times, serif" }}
+                >
+                  community
+                </Link>
               </div>
               <div className="flex items-center gap-4">
                 <button className="flex items-center text-base text-black hover:bg-gray-100 px-2 py-1 rounded transition" style={{ fontFamily: "Times New Roman, Times, serif" }}>
