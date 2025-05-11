@@ -8,6 +8,12 @@ module.exports = {
   ],
   theme: {
     extend: {
+      borderColor: {
+        border: "var(--border)",
+      },
+      ringColor: {
+        ring: "var(--ring)",
+      },
       typography: {
         DEFAULT: {
           css: {
