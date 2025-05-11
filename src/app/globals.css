@@ -118,7 +118,7 @@
 
 @layer base {
   * {
-    @apply border-border outline outline-ring/50;
+    @apply border-border;
     font-family: "Times New Roman", Times, serif !important;
   }
   body {
