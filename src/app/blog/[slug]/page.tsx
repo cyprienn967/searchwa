@@ -51,16 +51,12 @@ function formatMarkdown(content: string) {
 }
 
 type Props = {
-  params: { slug: string }
+  params: Promise<{ slug: string }>
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default async function BlogPostPage({
-  params,
-}: {
-  params: { slug: string }
-}) {
-  const slug = params.slug;
+export default async function BlogPostPage({ params }: Props) {
+  const { slug } = await params;
   const post = await getBlogPostBySlug(slug);
   
   if (!post) {
