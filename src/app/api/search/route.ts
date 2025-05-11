@@ -52,6 +52,17 @@ export async function POST(request: NextRequest) {
       url: result.url
     }));
 
+    // Format the search results to send first
+    const formattedResults = {
+      results: searchResults.results.map(result => ({
+        title: result.title,
+        url: result.url,
+        displayUrl: new URL(result.url).hostname,
+        snippet: result.text?.substring(0, 200) + '...' || '',
+        summary: result.text || ''
+      }))
+    };
+
     // Create a system prompt that emphasizes focusing on the user's question
     const baseSystemPrompt = `You are a personalized search assistant that summarizes search results in a comprehensive, informative manner similar to Perplexity.
 
@@ -69,47 +80,69 @@ INSTRUCTIONS:
 8. Keep responses concise while retaining all important information.
 9. IMPORTANT: Your primary task is to answer the user's specific question using the search results provided.`;
 
-    // Generate a clean summary using Azure OpenAI
-    const completion = await openai.chat.completions.create({
-      model: azureDeployment,
-      messages: [
-        {
-          role: "system",
-          content: baseSystemPrompt
-        },
-        {
-          role: "user",
-          content: query.includes("USER QUESTION:") 
-            ? query 
-            : `Search Query: "${query}"
+    // Create text encoder for the stream
+    const encoder = new TextEncoder();
 
+    // Create a readable stream for our response
+    const stream = new ReadableStream({
+      async start(controller) {
+        // First, send the search results
+        controller.enqueue(encoder.encode(JSON.stringify({ type: 'results', data: formattedResults }) + '\n'));
+
+        try {
+          // Create the streaming response from OpenAI
+          const completion = await openai.chat.completions.create({
+            model: azureDeployment,
+            messages: [
+              {
+                role: "system",
+                content: baseSystemPrompt
+              },
+              {
+                role: "user",
+                content: query.includes("USER QUESTION:") 
+                  ? query 
+                  : `Search Query: "${query}"
+      
 Below are the combined contents from multiple search results:
-
+      
 ${JSON.stringify(searchContext, null, 2)}
-
+      
 Please provide ONE comprehensive summary that synthesizes information from all these sources to directly answer the search query.`
+              }
+            ],
+            max_tokens: 1500,
+            temperature: 0.4,
+            top_p: 0.95,
+            frequency_penalty: 0,
+            presence_penalty: 0,
+            stream: true
+          });
+          
+          // Process the streaming response
+          for await (const chunk of completion) {
+            const content = chunk.choices[0]?.delta?.content || '';
+            if (content) {
+              controller.enqueue(encoder.encode(JSON.stringify({ type: 'chunk', data: content }) + '\n'));
+            }
+          }
+        } catch (error) {
+          controller.enqueue(encoder.encode(JSON.stringify({ type: 'error', data: 'Error generating response' }) + '\n'));
+          console.error('Streaming error:', error);
+        } finally {
+          controller.close();
         }
-      ],
-      max_tokens: 1500,
-      temperature: 0.4,
-      top_p: 0.95,
-      frequency_penalty: 0,
-      presence_penalty: 0
+      }
     });
-    
-    // Format results to match the expected structure
-    const formattedResults = {
-      results: searchResults.results.map(result => ({
-        title: result.title,
-        url: result.url,
-        displayUrl: new URL(result.url).hostname,
-        snippet: result.text?.substring(0, 200) + '...' || '',
-        summary: result.text || ''
-      })),
-      answer: completion.choices[0].message.content
-    };
 
-    return NextResponse.json(formattedResults);
+    // Return the stream with the appropriate headers
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
   } catch (error) {
     console.error('Search error:', error);
     return NextResponse.json(

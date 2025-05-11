@@ -213,20 +213,75 @@ Remember to answer this specific question directly, not just reflect on topics m
         throw new Error('Search failed');
       }
 
-      const data = await response.json();
-      setSearchResults(data.results);
-      setAnswer(data.answer);
-      
-      // Increment search count and check if limit is reached
-      const newSearchCount = searchCount + 1;
-      setSearchCount(newSearchCount);
-      if (newSearchCount >= MAX_SEARCHES) {
-        setSearchLimitReached(true);
+      // Check if the response is a stream
+      if (response.headers.get('Content-Type')?.includes('text/event-stream')) {
+        // Handle streaming response
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('Failed to get stream reader');
+        }
+
+        // Set loading to false, we'll show the incremental results
+        setIsLoading(false);
+        
+        // For collecting the streamed answer
+        let fullAnswer = '';
+        
+        // Process the stream
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          // Convert the chunk to text
+          const chunkText = new TextDecoder().decode(value);
+          
+          // Process each line (each line is a JSON object)
+          const lines = chunkText.split('\n').filter(line => line.trim());
+          
+          for (const line of lines) {
+            try {
+              const data = JSON.parse(line);
+              
+              if (data.type === 'results') {
+                // Update search results when we get them
+                setSearchResults(data.data.results);
+              } else if (data.type === 'chunk') {
+                // Incrementally update the answer as chunks arrive
+                fullAnswer += data.data;
+                setAnswer(fullAnswer);
+              } else if (data.type === 'error') {
+                throw new Error(data.data);
+              }
+            } catch (e) {
+              console.error('Error parsing stream chunk:', e);
+            }
+          }
+        }
+        
+        // Increment search count and check if limit is reached
+        const newSearchCount = searchCount + 1;
+        setSearchCount(newSearchCount);
+        if (newSearchCount >= MAX_SEARCHES) {
+          setSearchLimitReached(true);
+        }
+      } else {
+        // Fallback to non-streaming response (for backward compatibility)
+        const data = await response.json();
+        setSearchResults(data.results);
+        setAnswer(data.answer);
+        
+        // Increment search count and check if limit is reached
+        const newSearchCount = searchCount + 1;
+        setSearchCount(newSearchCount);
+        if (newSearchCount >= MAX_SEARCHES) {
+          setSearchLimitReached(true);
+        }
+        
+        setIsLoading(false);
       }
     } catch (err) {
       setError('Failed to perform search. Please try again.');
       console.error('Search error:', err);
-    } finally {
       setIsLoading(false);
     }
   };
