@@ -1,6 +1,7 @@
 import { getBlogPostBySlug, getBlogPosts } from "@/lib/blog";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Metadata } from "next";
 
 export async function generateStaticParams() {
   const posts = await getBlogPosts();
@@ -9,7 +10,7 @@ export async function generateStaticParams() {
   }));
 }
 
-export async function generateMetadata({ params }: { params: { slug: string } }) {
+export async function generateMetadata({ params }: { params: { slug: string } }): Promise<Metadata> {
   const slug = params.slug;
   const post = await getBlogPostBySlug(slug);
   
