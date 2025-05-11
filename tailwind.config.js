@@ -8,6 +8,12 @@ module.exports = {
   ],
   theme: {
     extend: {
+      backgroundColor: {
+        background: "var(--background)",
+      },
+      textColor: {
+        foreground: "var(--foreground)",
+      },
       borderColor: {
         border: "var(--border)",
       },
