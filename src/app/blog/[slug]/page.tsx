@@ -1,3 +1,5 @@
+// src/app/blog/[slug]/page.tsx
+
 import { getBlogPostBySlug, getBlogPosts } from "@/lib/blog";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -53,7 +55,11 @@ type Props = {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
-export default async function BlogPostPage({ params }: Props) {
+export default async function BlogPostPage({
+  params,
+}: {
+  params: { slug: string }
+}) {
   const slug = params.slug;
   const post = await getBlogPostBySlug(slug);
   
@@ -84,4 +90,4 @@ export default async function BlogPostPage({ params }: Props) {
       />
     </div>
   );
-} 
+}
