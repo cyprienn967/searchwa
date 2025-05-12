@@ -50,15 +50,13 @@ function formatMarkdown(content: string) {
   return html;
 }
 
-// @ts-ignore - Next.js 15 type system issue with dynamic routes
 type Props = {
-  params: Promise<{ slug: string }>
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: { slug: string }
+  searchParams?: { [key: string]: string | string[] | undefined }
 }
 
-// @ts-ignore - Next.js 15 type system issue with dynamic routes
 export default async function BlogPostPage({ params }: Props) {
-  const { slug } = await params;
+  const slug = params.slug;
   const post = await getBlogPostBySlug(slug);
   
   if (!post) {
