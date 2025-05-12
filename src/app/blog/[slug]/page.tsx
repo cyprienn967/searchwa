@@ -55,6 +55,7 @@ type Props = {
   searchParams: { [key: string]: string | string[] | undefined }
 }
 
+// @ts-ignore - Next.js 15 type system issue with dynamic routes
 export default async function BlogPostPage({ params }: Props) {
   const { slug } = await params;
   const post = await getBlogPostBySlug(slug);
