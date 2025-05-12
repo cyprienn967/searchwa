@@ -8,6 +8,16 @@ import Link from "next/link";
 export const metadata: Metadata = {
   title: "Steer",
   description: "Search by you, for you.",
+  icons: {
+    icon: [
+      {
+        url: '/favicon.webp',
+        type: 'image/webp',
+      }
+    ],
+    shortcut: '/favicon.webp',
+    apple: '/favicon.webp',
+  },
 };
 
 export default function RootLayout({
