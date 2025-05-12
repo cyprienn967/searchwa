@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import * as motion from "motion/react-client";
+import Link from "next/link";
 
 export function Counter() {
   const [count, setCount] = useState<number | null>(null);
@@ -60,7 +61,7 @@ export function Counter() {
       aria-live="polite"
     >
       Join <span className="font-bold">{count.toLocaleString()}</span>+ others
-      who signed up
+      who signed up or try us out <Link href="/use-cases" className=" hover:text-purple-800 underline">here</Link>
     </motion.p>
   );
 }

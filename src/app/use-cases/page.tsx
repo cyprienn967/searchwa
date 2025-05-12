@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import SearchBar from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import { SearchResult } from "@/lib/types";
@@ -157,6 +157,39 @@ Maintain a professional tone while being motivational when relevant.
 IMPORTANT: Focus primarily on answering the exact question asked, not just on healthcare or running topics.`
 };
 
+// Expanded persona descriptions
+const expandedDescriptions: Record<string, string> = {
+  "Tim": "Tim is a curious kindergartener who's fascinated by space, dinosaurs, and animals. He loves picture books, animated shows about nature, and asking 'why' about everything. He prefers simple explanations with colorful comparisons and gets excited about fun facts. Tim values imagination, discovery, and understanding the world around him in simple terms. He likes responses with bullet points, emojis, and short sentences that are easy to understand.",
+  
+  "Thomas": "Thomas is a seasoned investment banker with 20+ years in financial markets. He specializes in merger acquisitions and has an MBA from Wharton. He reads The Economist and Financial Times daily, enjoys fine whiskey, and plays golf on weekends. Thomas values efficiency, data-driven analysis, and profitable outcomes. He prefers responses that are concise, well-structured with bullet points, and include relevant market data when appropriate.",
+  
+  "Marie": "Marie is a retired elementary school teacher who's interested in staying connected with her grandchildren through technology. She's intelligent but cautious about new devices and AI. She enjoys gardening, book clubs, and traveling. Marie values simplicity, privacy, and practical knowledge. She prefers step-by-step instructions, analogies to familiar concepts, and explanations that avoid technical jargon.",
+  
+  "Aroon": "Aroon is a high-achieving high school junior preparing for college applications. He takes AP classes in math and science while playing varsity tennis. He studies late at night, uses flashcards apps, and participates in academic competitions. Aroon values efficiency, academic excellence, and clear learning paths. He prefers structured explanations with examples, practice opportunities, and connections between concepts.",
+  
+  "Addo": "Addo works in luxury real estate and has discerning taste in fashion, cars, and home design. He follows auction trends at Christie's and Sotheby's, travels to fashion weeks, and appreciates artisanal craftsmanship. Addo values exclusivity, quality, and sophisticated aesthetics. He prefers responses that highlight premium options, emphasize quality and craftsmanship, and maintain an elegant, sophisticated tone.",
+  
+  "Fatima": "Fatima has a Ph.D. in Chemistry and creates engaging, hands-on science curriculum for her students. She reads scientific journals, attends education conferences, and experiments with new teaching methods. Fatima values accuracy, educational impact, and student engagement. She prefers responses with clear explanations, real-world applications, and classroom-ready examples that spark curiosity.",
+  
+  "Jorge": "Jorge is studying International Relations while playing university football. He balances training sessions with coursework, follows global football leagues, and participates in Model UN. Jorge values balancing academics and athletics, understanding different perspectives, and clear communication. He prefers concise explanations, relevant examples, and information that relates to both his studies and sporting interests.",
+  
+  "Li Wei": "Li Wei runs a successful neighborhood bakery known for both traditional and innovative recipes. She manages inventory, staff schedules, and customer relationships while experimenting with new flavors. Li Wei values practicality, community connection, and sustainable business practices. She prefers actionable advice, efficient solutions, and information that can directly improve her business operations.",
+  
+  "Priya": "Priya is a full-stack developer at a tech startup who spends weekends exploring hiking trails. She contributes to open-source projects, attends tech meetups, and tracks her hiking achievements. Priya values efficient code, work-life balance, and continuous learning. She prefers technical depth when appropriate, structured information with code examples, and clear explanations that don't waste time.",
+  
+  "Omar": "Omar is a university history professor who's been playing chess since childhood. He researches medieval European history, hosts a history podcast, and competes in regional chess tournaments. Omar values analytical thinking, historical context, and strategic planning. He prefers nuanced explanations, well-sourced information, and responses that acknowledge complexity while remaining accessible.",
+  
+  "Sofia": "Sofia is a creative middle schooler who divides her time between digital art and gaming. She creates character designs, watches drawing tutorials, and plays games that encourage creativity. Sofia values self-expression, imagination, and developing her skills. She prefers step-by-step instructions, visual examples, and encouraging guidance that helps her improve without overwhelming her.",
+  
+  "Grace": "Grace is a retired nurse navigating technology to stay connected with family. She's learning to use social media, video calls, and online shopping while being concerned about security. Grace values simplicity, connection with loved ones, and feeling confident with technology. She prefers patient, jargon-free explanations, step-by-step instructions, and reassurance about online safety.",
+  
+  "Alex": "Alex is a marketing director and parent of young children who maximizes every minute. They meal-prep on weekends, use productivity apps, and look for educational activities to do with their kids. Alex values efficiency, quality family time, and practical solutions. They prefer bulleted lists, quick takeaways, and information organized by priority that respects their limited time.",
+  
+  "Musa": "Musa is studying music production while trying to build his following as an independent artist. He creates beats, writes lyrics, and performs at local venues while managing his social media presence. Musa values artistic authenticity, connecting with listeners, and building his career. He prefers practical advice, creative inspiration, and information that balances artistic and business aspects of music.",
+  
+  "Elena": "Elena is a medical researcher who trains for marathons before and after work. She conducts clinical trials, publishes in medical journals, and follows a rigorous training schedule for competitive races. Elena values evidence-based approaches, discipline, and achieving peak performance. She prefers well-structured information, scientifically-backed explanations, and content that acknowledges both her professional and athletic interests."
+};
+
 export default function UseCasesPage() {
   const [selected, setSelected] = useState<number | null>(null);
   const [start, setStart] = useState(0);
@@ -168,6 +201,9 @@ export default function UseCasesPage() {
   const [searchCount, setSearchCount] = useState<number>(0);
   const [searchLimitReached, setSearchLimitReached] = useState<boolean>(false);
   const [showInfoPopover, setShowInfoPopover] = useState<boolean>(false);
+  const [popoverPosition, setPopoverPosition] = useState({ x: 0, y: 0 });
+  const [showPersonaDetail, setShowPersonaDetail] = useState<string | null>(null);
+  const [scrollPosition, setScrollPosition] = useState(0);
 
   const MAX_SEARCHES = 5;
   const remainingSearches = MAX_SEARCHES - searchCount;
@@ -307,6 +343,20 @@ Remember to answer this specific question directly, not just reflect on topics m
     }
   };
 
+  // Update scroll position
+  useEffect(() => {
+    const handleScroll = () => {
+      setScrollPosition(window.scrollY);
+    };
+    
+    // Set initial scroll position
+    setScrollPosition(window.scrollY);
+    
+    // Add scroll event listener
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="max-w-5xl mx-auto px-6 py-12">
@@ -321,7 +371,11 @@ Remember to answer this specific question directly, not just reflect on topics m
             </h1>
             <button 
               ref={infoButtonRef}
-              onClick={() => setShowInfoPopover(!showInfoPopover)} 
+              onClick={(e) => {
+                const rect = e.currentTarget.getBoundingClientRect();
+                setPopoverPosition({ x: rect.left, y: rect.bottom });
+                setShowInfoPopover(!showInfoPopover);
+              }} 
               className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors"
               aria-label="Learn how to use this demo"
             >
@@ -334,7 +388,14 @@ Remember to answer this specific question directly, not just reflect on topics m
             
             {/* Info Popover */}
             {showInfoPopover && (
-              <div className="absolute z-50 mt-2 transform translate-y-10 left-1/2 -translate-x-1/2">
+              <div 
+                className="fixed z-50"
+                style={{
+                  left: `${popoverPosition.x}px`,
+                  top: `${popoverPosition.y + 10}px`,
+                  transform: 'translateX(-50%)'
+                }}
+              >
                 <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 rounded-lg shadow-lg text-white max-w-sm relative">
                   {/* Arrow pointing up */}
                   <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 text-purple-500" aria-hidden="true">
@@ -360,7 +421,21 @@ Remember to answer this specific question directly, not just reflect on topics m
                     <li>Enter your question below</li>
                     <li>Watch results stream in real-time</li>
                   </ol>
-                  <p className="text-white/80 italic text-xs">See how responses adapt to different profiles!</p>
+                  <p className="text-white/80 italic text-xs mb-3">See how responses adapt to different profiles!</p>
+                  
+                  {/* Search counter moved here */}
+                  <div className={`mt-3 pt-3 border-t border-white/20 ${
+                    searchLimitReached 
+                      ? "text-red-200" 
+                      : "text-white/90"
+                  }`}>
+                    <span className="font-medium">
+                      {searchLimitReached 
+                        ? "Search limit reached" 
+                        : `${remainingSearches} search${remainingSearches !== 1 ? 'es' : ''} remaining`
+                      }
+                    </span>
+                  </div>
                 </div>
               </div>
             )}
@@ -430,6 +505,64 @@ Remember to answer this specific question directly, not just reflect on topics m
                         {user.name}, {user.age}
                       </span>
                       <span className="text-sm font-normal leading-normal">{user.desc}</span>
+                      
+                      {/* Eye button - hover effect */}
+                      <div
+                        onMouseEnter={() => setShowPersonaDetail(user.name)}
+                        onMouseLeave={() => setShowPersonaDetail(null)}
+                        onFocus={() => setShowPersonaDetail(user.name)}
+                        onBlur={() => setShowPersonaDetail(null)}
+                        className={`absolute top-2 right-2 p-1.5 rounded-full cursor-pointer
+                          ${isSelected 
+                            ? "bg-white/20 text-white hover:bg-white/30" 
+                            : "bg-gray-100 text-gray-600 hover:bg-gray-200"}
+                          transition-colors
+                        `}
+                        aria-label={`View details about ${user.name}`}
+                        role="button"
+                        tabIndex={0}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setShowPersonaDetail(e.type === 'keydown' ? user.name : null);
+                          }
+                        }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                          <circle cx="12" cy="12" r="3"></circle>
+                        </svg>
+                      </div>
+                      
+                      {/* Persona detail popover */}
+                      {showPersonaDetail === user.name && (
+                        <div 
+                          className="fixed z-50" 
+                          style={{ 
+                            top: `${scrollPosition + 100}px`,
+                            left: '50%',
+                            transform: 'translateX(-50%)',
+                            width: '90%',
+                            maxWidth: '400px'
+                          }}
+                        >
+                          <div className="bg-white dark:bg-gray-800 p-5 rounded-lg shadow-xl border border-gray-200 dark:border-gray-700">
+                            <div className="flex justify-between items-center mb-3">
+                              <h3 className="font-bold text-lg text-gray-900 dark:text-white">{user.name}'s Profile</h3>
+                              {/* Remove close button since it's now hover-based */}
+                            </div>
+                            <div className="text-gray-700 dark:text-gray-300 text-sm">
+                              <p className="mb-3">{expandedDescriptions[user.name]}</p>
+                              <div className="pt-3 mt-3 border-t border-gray-200 dark:border-gray-700">
+                                <div className="text-xs text-purple-600 dark:text-purple-400 italic">
+                                  Search as {user.name} to get responses tailored to this persona.
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -475,22 +608,6 @@ Remember to answer this specific question directly, not just reflect on topics m
               </div>
             </div>
           )}
-        </div>
-
-        {/* Search counter */}
-        <div className="text-center mb-6">
-          <div className={`inline-flex items-center px-4 py-2 rounded-full ${
-            searchLimitReached 
-              ? "bg-red-50 text-red-700 border border-red-200" 
-              : "bg-purple-50 text-purple-700 border border-purple-200"
-          }`}>
-            <span className="font-medium">
-              {searchLimitReached 
-                ? "Search limit reached" 
-                : `${remainingSearches} search${remainingSearches !== 1 ? 'es' : ''} remaining`
-              }
-            </span>
-          </div>
         </div>
 
         {/* Search results and answer */}
