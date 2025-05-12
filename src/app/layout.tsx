@@ -114,24 +114,6 @@ export default function RootLayout({
               <span className="text-white text-lg tracking-wide opacity-90">
                 Steer - 2025
               </span>
-              <div className="flex gap-4">
-                <a
-                  href="https://www.linkedin.com/in/cyprienriboudseydoux/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="LinkedIn Cyprien"
-                >
-                  <FaLinkedin className="text-white" size={36} />
-                </a>
-                <a
-                  href="https://www.linkedin.com/in/aidanzhang06/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="LinkedIn Aidan"
-                >
-                  <FaLinkedin className="text-white" size={36} />
-                </a>
-              </div>
             </footer>
           </div>
         </ThemeProvider>
