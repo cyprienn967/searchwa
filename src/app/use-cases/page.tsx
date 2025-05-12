@@ -25,6 +25,25 @@ const users = [
 const VISIBLE = 3;
 const PROFILE_WIDTH = 320;
 
+// Suggested searches for each persona
+const suggestedSearches: Record<string, string[]> = {
+  "Tim": ["Why is the sky blue?", "How do dinosaurs sleep?", "What are black holes?"],
+  "Thomas": ["Best investment strategies for 2025", "Market trends in fintech", "ESG investing risks and rewards"],
+  "Marie": ["How to protect my online privacy", "What is cloud storage?", "Difference between iPad and tablet"],
+  "Aroon": ["SAT math preparation tips", "How to improve vocabulary", "Time management for exams"],
+  "Addo": ["Most exclusive watches 2025", "Luxury travel destinations", "Premium home automation systems"],
+  "Fatima": ["Engaging chemistry experiments for teens", "Latest discoveries in astronomy", "How to explain climate change"],
+  "Jorge": ["How do football transfers work?", "Study tips for university exams", "History of World Cup"],
+  "Li Wei": ["Best bread pricing strategies", "Small bakery marketing ideas", "Efficient kitchen workflow"],
+  "Priya": ["Debugging performance issues in React", "Best hiking trails in California", "Software architecture patterns"],
+  "Omar": ["Greatest chess openings explained", "The Byzantine Empire's influence", "Cold War timeline"],
+  "Sofia": ["Easy drawing techniques for beginners", "Best games for creativity", "How to animate characters"],
+  "Grace": ["Simple guide to video calls", "How to spot internet scams", "Using social media safely"],
+  "Alex": ["Quick healthy meals for kids", "Time-saving home organization", "Educational activities under 10 minutes"],
+  "Musa": ["How to write better lyrics", "Music production on a budget", "Marketing music independently"],
+  "Elena": ["Injury prevention for long-distance runners", "Latest medical research methods", "Balancing career and training"]
+};
+
 const userPrompts: Record<string, string> = {
   Tim: `Answer the following question directly and accurately for a curious 5-year-old with early reading skills.
 Use very simple sentences, short words, and a playful tone.
@@ -148,11 +167,13 @@ export default function UseCasesPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchCount, setSearchCount] = useState<number>(0);
   const [searchLimitReached, setSearchLimitReached] = useState<boolean>(false);
+  const [showInfoPopover, setShowInfoPopover] = useState<boolean>(false);
 
   const MAX_SEARCHES = 5;
   const remainingSearches = MAX_SEARCHES - searchCount;
 
   const profilesRowRef = useRef<HTMLDivElement>(null);
+  const infoButtonRef = useRef<HTMLButtonElement>(null);
 
   const canScrollLeft = start > 0;
   const canScrollRight = start + VISIBLE < users.length;
@@ -291,20 +312,61 @@ Remember to answer this specific question directly, not just reflect on topics m
       <div className="max-w-5xl mx-auto px-6 py-12">
         {/* Always visible profiles section */}
         <div className="flex flex-col items-center mb-12">
-          <h1
-            className="text-4xl font-bold mb-6"
-            style={{ fontFamily: "Times New Roman, Times, serif" }}
-          >
-            Search as...
-          </h1>
+          <div className="flex items-center justify-center gap-3 mb-6">
+            <h1
+              className="text-4xl font-bold"
+              style={{ fontFamily: "Times New Roman, Times, serif" }}
+            >
+              Search as...
+            </h1>
+            <button 
+              ref={infoButtonRef}
+              onClick={() => setShowInfoPopover(!showInfoPopover)} 
+              className="inline-flex items-center justify-center rounded-full w-8 h-8 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors"
+              aria-label="Learn how to use this demo"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <line x1="12" y1="16" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12.01" y2="8"></line>
+              </svg>
+            </button>
+            
+            {/* Info Popover */}
+            {showInfoPopover && (
+              <div className="absolute z-50 mt-2 transform translate-y-10 left-1/2 -translate-x-1/2">
+                <div className="bg-gradient-to-r from-purple-500 to-indigo-600 p-4 rounded-lg shadow-lg text-white max-w-sm relative">
+                  {/* Arrow pointing up */}
+                  <div className="absolute -top-2 left-1/2 transform -translate-x-1/2 text-purple-500" aria-hidden="true">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 2L2 12h20L12 2z"/>
+                    </svg>
+                  </div>
+                  
+                  <button 
+                    onClick={() => setShowInfoPopover(false)}
+                    className="absolute top-2 right-2 text-white/80 hover:text-white"
+                    aria-label="Close guide"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <line x1="18" y1="6" x2="6" y2="18"></line>
+                      <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                  </button>
+                  
+                  <h2 className="text-lg font-bold mb-2">Try the Demo!</h2>
+                  <ol className="space-y-2 mb-2 list-decimal pl-5 text-sm">
+                    <li>Select a persona</li>
+                    <li>Enter your question below</li>
+                    <li>Watch results stream in real-time</li>
+                  </ol>
+                  <p className="text-white/80 italic text-xs">See how responses adapt to different profiles!</p>
+                </div>
+              </div>
+            )}
+          </div>
           
-          {selected !== null && (
-            <p className="text-lg text-gray-600 mb-8">
-              You're searching as <span className="font-semibold">{users[selected].name}</span> - {users[selected].desc}
-            </p>
-          )}
-          
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 mb-8">
             <button
               onClick={handleLeft}
               disabled={!canScrollLeft}
@@ -388,6 +450,31 @@ Remember to answer this specific question directly, not just reflect on topics m
               </svg>
             </button>
           </div>
+          
+          {selected !== null && (
+            <div className="flex flex-col items-center mb-4">
+              <p className="text-lg text-gray-600 mb-3">
+                You're searching as <span className="font-semibold">{users[selected].name}</span> - {users[selected].desc}
+              </p>
+              
+              {/* Suggested searches */}
+              <div className="mt-2">
+                <p className="text-sm text-gray-500 mb-2">Try these searches:</p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  {suggestedSearches[users[selected].name]?.map((suggestion, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => handleSearch(suggestion)}
+                      className="px-3 py-1.5 bg-white border border-purple-200 rounded-full text-sm text-purple-700 hover:bg-purple-50 transition-colors shadow-sm"
+                      disabled={isLoading || searchLimitReached}
+                    >
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Search counter */}
