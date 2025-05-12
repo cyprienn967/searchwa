@@ -50,6 +50,7 @@ function formatMarkdown(content: string) {
   return html;
 }
 
+// @ts-ignore - Next.js 15 type system issue with dynamic routes
 type Props = {
   params: Promise<{ slug: string }>
   searchParams: { [key: string]: string | string[] | undefined }
