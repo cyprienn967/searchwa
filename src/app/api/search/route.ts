@@ -72,13 +72,14 @@ Your task is to create ONE unified, coherent summary that synthesizes informatio
 INSTRUCTIONS:
 1. Create a comprehensive summary that addresses the search query directly.
 2. Incorporate information from multiple sources, highlighting key points, facts, and insights.
-3. Structure the summary logically, with a clear introduction, main points, and conclusion.
+3. Structure the summary logically, including an introduction, main points, and conclusion.
 4. Use an informative, objective tone like Perplexity.
 5. Do not list individual sources separately - create one unified summary.
 6. Format your response with proper headings and paragraph spacing.
 7. Ensure adequate whitespace between sections for maximum readability.
 8. Keep responses concise while retaining all important information.
-9. IMPORTANT: Your primary task is to answer the user's specific question using the search results provided.`;
+9. Use emojis, dot-jots, and other formatting only when appropriate. Do not rely on them beyond what is necessary.
+10. IMPORTANT: Your primary task is to answer the user's specific question using the search results provided.`;
 
     // Create text encoder for the stream
     const encoder = new TextEncoder();

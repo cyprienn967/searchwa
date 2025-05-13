@@ -47,10 +47,10 @@ const suggestedSearches: Record<string, string[]> = {
 const userPrompts: Record<string, string> = {
   Tim: `Answer the following question directly and accurately for a curious 5-year-old with early reading skills.
 Use very simple sentences, short words, and a playful tone.
-Present facts as clear bullet points.
+Present some key facts as clear bullet points.
 If relevant to the question, include examples or brief stories.
-Use emojis occasionally if it helps explain the concept.
-Avoid technical terms or long paragraphs.
+Use emojis sparingly if it helps explain the concept.
+Avoid technical terms and long paragraphs, but still use full sentences.
 IMPORTANT: Focus primarily on answering the exact question asked, not just on planets and animals.`,
 
   Thomas: `Answer the following question directly and accurately for an experienced investment banker.
@@ -297,20 +297,34 @@ Remember to answer this specific question directly, not just reflect on topics m
           
           for (const line of lines) {
             try {
-              const data = JSON.parse(line);
+              // Skip empty lines or malformed JSON
+              if (!line || line.trim() === '') continue;
               
-              if (data.type === 'results') {
+              // Safely parse JSON with extra validation
+              let data;
+              try {
+                data = JSON.parse(line);
+              } catch (parseError) {
+                console.error('JSON parse error:', parseError, 'on line:', line);
+                continue; // Skip this line and continue with the next one
+              }
+              
+              // Skip if data isn't properly structured
+              if (!data || typeof data !== 'object') continue;
+              
+              if (data.type === 'results' && data.data && data.data.results) {
                 // Update search results when we get them
                 setSearchResults(data.data.results);
-              } else if (data.type === 'chunk') {
+              } else if (data.type === 'chunk' && data.data) {
                 // Incrementally update the answer as chunks arrive
                 fullAnswer += data.data;
                 setAnswer(fullAnswer);
               } else if (data.type === 'error') {
-                throw new Error(data.data);
+                throw new Error(data.data || 'Unknown error');
               }
             } catch (e) {
-              console.error('Error parsing stream chunk:', e);
+              console.error('Error processing stream chunk:', e);
+              // Don't rethrow - just log and continue
             }
           }
         }
