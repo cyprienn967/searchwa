@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     siteName: "Steer",
     images: [
       {
-        url: "/og/preview.jpg",
+        url: "/og-image.png",
         width: 1200,
         height: 630,
         alt: "Steer - Search by you, for you",
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Steer - Search by you, for you",
     description: "Request an invite to our private beta",
-    images: ["/og/preview.jpg"],
+    images: ["/og-image.png"],
   },
 };
 
