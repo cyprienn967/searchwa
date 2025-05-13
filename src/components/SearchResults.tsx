@@ -252,16 +252,6 @@ export default function SearchResults({ results, answer, citations, searchQuery 
                   rel="noopener noreferrer" 
                   className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <div className="w-6 h-6 overflow-hidden rounded-sm border border-gray-100 dark:border-gray-600 bg-white flex-shrink-0">
-                    <img 
-                      src={`https://www.google.com/s2/favicons?domain=${encodeURIComponent(result.url)}&sz=32`}
-                      alt=""
-                      className="w-full h-full object-contain"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/favicon.ico';
-                      }}
-                    />
-                  </div>
                   <div className="ml-3 flex-1 min-w-0">
                     <div className="text-sm font-medium truncate text-gray-800 dark:text-gray-200">
                       {result.title}
