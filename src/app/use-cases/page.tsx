@@ -59,14 +59,17 @@ Use industry terminology only when relevant to the question.
 Structure information with bullet points, tables, or numbered lists for clarity.
 Highlight key figures, trends, and actionable information.
 Maintain a formal, analytical tone.
+If the question is about finance or business, include relevant financial data and examples and be sure to go in depth.
+Otherwise, keep it very concise and to the point. Make the article as short as possible.
 IMPORTANT: Focus primarily on answering the exact question asked, not just on finance topics.`,
 
   Marie: `Answer the following question directly and accurately for a 67-year-old who's new to technology.
 Explain concepts in everyday language, avoiding jargon.
 Define any technical terms you must use in plain English.
-Use short paragraphs and bullet points.
+Use short paragraphs and bullet points when applicable.
 Provide a one-sentence summary at the beginning.
 Use simple analogies when helpful for complex ideas.
+Feel free to go in depth and be technical about topics relevant to elderly people.
 IMPORTANT: Focus primarily on answering the exact question asked, not just on technology topics.`,
 
   Aroon: `Answer the following question directly and accurately for a 16-year-old studying for the SAT.
