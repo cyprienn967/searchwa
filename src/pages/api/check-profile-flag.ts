@@ -6,15 +6,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { email } = req.body;
   if (!email) return res.status(400).json({ flag: false });
 
-  // Find the user's entry in the set
-  const members = await redis.smembers('1');
+  // Use the JSON get method
+  const user = await redis.json.get('2');
   let flag = false;
-  for (const entry of members) {
-    const [entryEmail, , entryFlag] = entry.split(',').map(s => s.trim());
-    if (entryEmail === email) {
-      flag = entryFlag === 'true';
-      break;
-    }
+  if (user && user.email === email) {
+    flag = !!user.flag;
   }
   return res.status(200).json({ flag });
 } 

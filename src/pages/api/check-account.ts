@@ -6,16 +6,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { email, inviteCode } = req.body;
   if (!email || !inviteCode) return res.status(400).json({ exists: false });
 
-  // Get all members of the set with key '1'
-  const members = await redis.smembers('1');
+  // Use the JSON get method
+  const user = await redis.json.get('2');
+  console.log('user:', user, 'email:', email, 'inviteCode:', inviteCode);
+
   let found = false;
-  for (const entry of members) {
-    const [entryEmail, entryInvite] = entry.split(',').map(s => s.trim());
-    console.log('Comparing:', { entryEmail, entryInvite, submittedEmail: email, submittedInvite: inviteCode });
-    if (entryEmail === email && entryInvite === inviteCode) {
-      found = true;
-      break;
-    }
+  if (user && user.email === email && user.code === inviteCode) {
+    found = true;
   }
 
   return res.status(200).json({ exists: found });
