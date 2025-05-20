@@ -239,59 +239,37 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header with user info */}
-      <nav className="w-full bg-white dark:bg-gray-800 shadow-sm">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16">
-            <div className="flex">
-              <div className="flex-shrink-0 flex items-center">
-                <Link href="/">
-                  <span className="text-2xl font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded transition" style={{ fontFamily: "Times New Roman, Times, serif" }}>
-                    steer
-                  </span>
-                </Link>
-              </div>
-            </div>
-            <div className="flex items-center">
-              <span className="text-sm text-gray-600 dark:text-gray-300 mr-4">
-                Logged in as <span className="font-semibold">{userEmail}</span>
-              </span>
-              <button
-                onClick={() => {
-                  localStorage.removeItem("steerLoggedIn");
-                  localStorage.removeItem("steerUserEmail");
-                  router.push("/");
-                }}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 transition-colors"
-              >
-                Logout
-              </button>
-            </div>
-          </div>
+      <nav className="w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-gray-800" style={{ borderBottom: "none" }}>
+        <div className="flex items-center">
+          <Link href="/">
+            <span className="text-2xl font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded transition" style={{ fontFamily: "Times New Roman, Times, serif" }}>
+              steer
+            </span>
+          </Link>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600 dark:text-gray-300">
+            Logged in as <span className="font-semibold">{userEmail}</span>
+          </span>
+          <button
+            onClick={() => {
+              localStorage.removeItem("steerLoggedIn");
+              localStorage.removeItem("steerUserEmail");
+              router.push("/");
+            }}
+            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+          >
+            Logout
+          </button>
         </div>
       </nav>
       
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Main content */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-center mb-8">Search with Steer</h1>
-          
-          {/* Search interface */}
-          <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8">
-            <SearchBar 
-              onSearch={handleSearch} 
-              initialQuery={searchQuery}
-              isConversationMode={true}
-              disabled={isSearching || searchLimitReached}
-            />
-            
-            {searchLimitReached && (
-              <div className="mt-2 text-center text-red-600 text-sm">
-                You've reached the maximum of {MAX_SEARCHES} searches. Please try again later.
-              </div>
-            )}
-          </div>
+          <h1 className="text-3xl font-bold text-center mb-8" style={{ fontFamily: "Times New Roman, Times, serif" }}>Search with Steer</h1>
         </div>
         
         {/* Error display */}
@@ -311,7 +289,7 @@ export default function AccountPage() {
         )}
         
         {/* Search results container - preserved with ref for scrolling */}
-        <div ref={resultsRef}>
+        <div ref={resultsRef} className="flex-1">
           {/* Search results */}
           {searchResults.length > 0 && (
             <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8">
@@ -329,6 +307,23 @@ export default function AccountPage() {
               <p className="text-gray-500 dark:text-gray-400">No results found. Try another search query.</p>
             </div>
           )}
+        </div>
+
+        {/* Search bar at the bottom */}
+        <div className="fixed bottom-0 left-0 right-0 flex justify-center items-end pointer-events-none" style={{zIndex: 50}}>
+          <div className="w-full max-w-2xl px-4 pb-6 pointer-events-auto">
+            <SearchBar 
+              onSearch={handleSearch} 
+              initialQuery={searchQuery}
+              isConversationMode={true}
+              disabled={isSearching || searchLimitReached}
+            />
+            {searchLimitReached && (
+              <div className="mt-2 text-center text-red-600 text-sm">
+                You've reached the maximum of {MAX_SEARCHES} searches. Please try again later.
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

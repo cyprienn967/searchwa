@@ -26,25 +26,27 @@ export function LoginDialog() {
     setIsLoading(true);
     
     try {
-      // For development: check against placeholder credentials
-      if (email === PLACEHOLDER_EMAIL && inviteCode === PLACEHOLDER_INVITE) {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 800));
-        
-        // Store login state in localStorage
-        localStorage.setItem("steerLoggedIn", "true");
-        localStorage.setItem("steerUserEmail", email);
-        
-        toast.success("Login successful!");
-        setIsOpen(false);
-        
-        // Redirect to account page
-        router.push("/account");
-      } else {
-        // For development, we'll show an error for any non-matching credentials
-        await new Promise(resolve => setTimeout(resolve, 800));
-        toast.error("Invalid credentials. Try the placeholder credentials shown below the form.");
+      // Check with backend if account exists in Redis
+      const res = await fetch('/api/check-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, inviteCode }),
+      });
+      const data = await res.json();
+      if (!data.exists) {
+        toast.error("Account not found or invite code incorrect");
+        setIsLoading(false);
+        return;
       }
+      // Store login state in localStorage
+      localStorage.setItem("steerLoggedIn", "true");
+      localStorage.setItem("steerUserEmail", email);
+      
+      toast.success("Login successful!");
+      setIsOpen(false);
+      
+      // Redirect to account page
+      router.push("/account");
     } catch (error) {
       toast.error("Login failed. Please check your credentials and try again.");
       console.error("Login error:", error);
