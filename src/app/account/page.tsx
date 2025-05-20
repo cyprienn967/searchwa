@@ -3,6 +3,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import SearchBar from "@/components/SearchBar";
+import SearchResults from "@/components/SearchResults";
 import { SearchResult } from "@/lib/types";
 import Link from "next/link";
 
@@ -15,13 +16,14 @@ export default function AccountPage() {
   const [answer, setAnswer] = useState<string>("");
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [streamingSummary, setStreamingSummary] = useState<string>("");
-  const [isStreaming, setIsStreaming] = useState(false);
-  const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
+  const [searchCount, setSearchCount] = useState<number>(0);
+  const [searchLimitReached, setSearchLimitReached] = useState<boolean>(false);
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const MAX_SEARCHES = 5;
+  const remainingSearches = MAX_SEARCHES - searchCount;
   
   // Check authentication on mount and restore saved search state
   useEffect(() => {
@@ -44,7 +46,6 @@ export default function AccountPage() {
         
         if (savedQuery) {
           setSearchQuery(savedQuery);
-          setHasSearched(true);
         }
         
         if (savedResults) {
@@ -98,6 +99,12 @@ export default function AccountPage() {
   }, [searchQuery, searchResults, answer]);
 
   const handleSearch = async (query: string) => {
+    if (searchLimitReached || searchCount >= MAX_SEARCHES) {
+      setError("You have reached the maximum number of searches. Please try again later.");
+      setSearchLimitReached(true);
+      return;
+    }
+
     // Abort any in-progress request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
@@ -106,19 +113,9 @@ export default function AccountPage() {
     // Create a new AbortController
     abortControllerRef.current = new AbortController();
     
-    // Keep track of the search query
     setSearchQuery(query);
-    
     setIsSearching(true);
-    setIsStreaming(true);
-    setStreamingSummary('');
     setError(null);
-    
-    // Only clear the previous results when starting a new search
-    setAnswer('');
-    setSearchResults([]);
-    setSuggestedQuestions([]);
-    setHasSearched(true);
 
     try {
       const response = await fetch('/api/search', {
@@ -130,8 +127,7 @@ export default function AccountPage() {
           query,
           userContext: {
             email: userEmail
-          },
-          streaming: true
+          }
         }),
         signal: abortControllerRef.current.signal
       });
@@ -140,66 +136,85 @@ export default function AccountPage() {
         throw new Error('Search failed');
       }
 
-      // Handle streaming response
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Failed to get stream reader');
-      }
-      
-      // Set up streaming
-      const decoder = new TextDecoder();
-      let fullSummary = '';
-      
-      // Process the stream
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      // Check if the response is a stream
+      if (response.headers.get('Content-Type')?.includes('text/event-stream')) {
+        // Handle streaming response
+        const reader = response.body?.getReader();
+        if (!reader) {
+          throw new Error('Failed to get stream reader');
+        }
+
+        // Set loading to false, we'll show the incremental results
+        setIsSearching(false);
         
-        // Convert the chunk to text
-        const chunkText = decoder.decode(value, { stream: true });
+        // For collecting the streamed answer
+        let fullAnswer = '';
         
-        // Process each line (each line is a JSON object)
-        const lines = chunkText.split('\n').filter(line => line.trim());
-        
-        for (const line of lines) {
-          try {
-            // Skip empty lines or malformed JSON
-            if (!line || line.trim() === '') continue;
-            
-            // Safely parse JSON with extra validation
-            let data;
+        // Process the stream
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          
+          // Convert the chunk to text
+          const chunkText = new TextDecoder().decode(value);
+          
+          // Process each line (each line is a JSON object)
+          const lines = chunkText.split('\n').filter(line => line.trim());
+          
+          for (const line of lines) {
             try {
-              data = JSON.parse(line);
-            } catch (parseError) {
-              console.error('JSON parse error:', parseError, 'on line:', line);
-              continue; // Skip this line and continue with the next one
+              // Skip empty lines or malformed JSON
+              if (!line || line.trim() === '') continue;
+              
+              // Safely parse JSON with extra validation
+              let data;
+              try {
+                data = JSON.parse(line);
+              } catch (parseError) {
+                console.error('JSON parse error:', parseError, 'on line:', line);
+                continue; // Skip this line and continue with the next one
+              }
+              
+              // Skip if data isn't properly structured
+              if (!data || typeof data !== 'object') continue;
+              
+              if (data.type === 'results' && data.data && data.data.results) {
+                // Update search results when we get them
+                setSearchResults(data.data.results);
+              } else if (data.type === 'chunk' && data.data) {
+                // Incrementally update the answer as chunks arrive
+                fullAnswer += data.data;
+                setAnswer(fullAnswer);
+              } else if (data.type === 'error') {
+                throw new Error(data.data || 'Unknown error');
+              }
+            } catch (e) {
+              console.error('Error processing stream chunk:', e);
+              // Don't rethrow - just log and continue
             }
-            
-            // Skip if data isn't properly structured
-            if (!data || typeof data !== 'object') continue;
-            
-            if (data.type === 'results' && data.data && data.data.results) {
-              // Update search results when we get them
-              setSearchResults(data.data.results);
-              setIsSearching(false); // We got initial results, just streaming now
-            } else if (data.type === 'chunk' && data.data) {
-              // Incrementally update the answer as chunks arrive
-              fullSummary += data.data;
-              setStreamingSummary(fullSummary);
-            } else if (data.type === 'error') {
-              throw new Error(data.data || 'Unknown error');
-            } else if (data.type === 'complete') {
-              // Final data with suggested questions and full summary
-              const completeData = JSON.parse(data.data);
-              setAnswer(completeData.combinedSummary || fullSummary);
-              setSuggestedQuestions(completeData.suggestedQuestions || []);
-              setIsStreaming(false);
-            }
-          } catch (e) {
-            console.error('Error processing stream chunk:', e);
-            // Don't rethrow - just log and continue
           }
         }
+        
+        // Increment search count and check if limit is reached
+        const newSearchCount = searchCount + 1;
+        setSearchCount(newSearchCount);
+        if (newSearchCount >= MAX_SEARCHES) {
+          setSearchLimitReached(true);
+        }
+      } else {
+        // Fallback to non-streaming response (for backward compatibility)
+        const data = await response.json();
+        setSearchResults(data.results);
+        setAnswer(data.answer);
+        
+        // Increment search count and check if limit is reached
+        const newSearchCount = searchCount + 1;
+        setSearchCount(newSearchCount);
+        if (newSearchCount >= MAX_SEARCHES) {
+          setSearchLimitReached(true);
+        }
+        
+        setIsSearching(false);
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -210,78 +225,8 @@ export default function AccountPage() {
       }
     } finally {
       setIsSearching(false);
-      setIsStreaming(false);
       abortControllerRef.current = null;
     }
-  };
-
-  // Format streaming summary into paragraphs and lists for better readability
-  const formatStreamingSummary = (text: string) => {
-    if (!text) return null;
-
-    // Function to process text and return properly formatted JSX
-    const processText = (text: string) => {
-      // Split by double newlines to get paragraphs
-      return text.split(/\n\n+/).map((paragraph, i) => {
-        // Check if paragraph starts with # for headings (markdown style)
-        if (paragraph.trim().startsWith('#')) {
-          const level = paragraph.trim().match(/^#+/)?.[0].length || 1;
-          const headingText = paragraph.trim().replace(/^#+\s*/, '');
-          const headingClasses = level === 1 
-            ? "font-bold text-2xl mt-5 mb-3" 
-            : "font-semibold text-xl mt-4 mb-3";
-          return <h3 key={i} className={headingClasses}>{headingText}</h3>;
-        }
-        
-        // Handle bullet list paragraphs (both • and - style bullets)
-        const isBulletList = paragraph.trim().split('\n').some(line => 
-          line.trim().startsWith('•') || line.trim().startsWith('-') || line.trim().startsWith('*')
-        );
-        
-        if (isBulletList) {
-          const listItems = paragraph.split('\n')
-            .map(line => line.trim())
-            .filter(Boolean);
-          
-          return (
-            <ul key={i} className="list-disc pl-8 my-3">
-              {listItems.map((item, j) => {
-                // Clean up bullet points (handles •, -, and *)
-                const cleanItem = item.replace(/^[•\-*]\s*/, '');
-                // Make question items bold
-                if (cleanItem.trim().endsWith('?')) {
-                  return <li key={j} className="my-2 text-base font-semibold leading-relaxed">{cleanItem}</li>;
-                }
-                return <li key={j} className="my-2 text-base leading-relaxed">{cleanItem}</li>;
-              })}
-            </ul>
-          );
-        } 
-        
-        // Check if paragraph is a question but not a heading
-        if (paragraph.trim().endsWith('?')) {
-          return <p key={i} className="my-3 text-base font-semibold leading-relaxed">{paragraph}</p>;
-        }
-        
-        // Check if this is a heading (short text that doesn't end with punctuation)
-        const isHeading = paragraph.length < 100 && 
-                         !paragraph.endsWith('.') && 
-                         !paragraph.endsWith('!') && 
-                         !paragraph.endsWith('?') &&
-                         !paragraph.includes('•') &&
-                         !paragraph.includes('-') &&
-                         !paragraph.includes('*');
-        
-        if (isHeading) {
-          return <h3 key={i} className="font-semibold text-xl mt-4 mb-3">{paragraph}</h3>;
-        }
-        
-        // Regular paragraph
-        return <p key={i} className="my-3 text-base leading-relaxed">{paragraph}</p>;
-      });
-    };
-
-    return <div className="text-base">{processText(text)}</div>;
   };
 
   // Show loading state while checking authentication
@@ -338,8 +283,14 @@ export default function AccountPage() {
               onSearch={handleSearch} 
               initialQuery={searchQuery}
               isConversationMode={true}
-              disabled={isSearching}
+              disabled={isSearching || searchLimitReached}
             />
+            
+            {searchLimitReached && (
+              <div className="mt-2 text-center text-red-600 text-sm">
+                You've reached the maximum of {MAX_SEARCHES} searches. Please try again later.
+              </div>
+            )}
           </div>
         </div>
         
@@ -364,69 +315,18 @@ export default function AccountPage() {
           {/* Search results */}
           {searchResults.length > 0 && (
             <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8">
-              <div className="prose dark:prose-dark max-w-none">
-                {/* Display streaming or final answer */}
-                {isStreaming ? (
-                  <div>
-                    {formatStreamingSummary(streamingSummary)}
-                    <span className="inline-block ml-1 animate-pulse">▎</span>
-                  </div>
-                ) : (
-                  <>
-                    {answer && formatStreamingSummary(answer)}
-                  </>
-                )}
-              </div>
-              
-              {/* Source citations */}
-              <div className="mt-8">
-                <h3 className="text-lg font-semibold mb-4">Sources</h3>
-                <div className="grid grid-cols-1 gap-4">
-                  {searchResults.map((result, index) => (
-                    <div key={index} className="flex items-start">
-                      <div className="w-6 h-6 flex items-center justify-center bg-blue-100 dark:bg-blue-900 rounded-full text-blue-800 dark:text-blue-200 text-xs font-medium mr-3 flex-shrink-0">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <a 
-                          href={result.url}
-                          target="_blank" 
-                          rel="noopener noreferrer" 
-                          className="text-blue-600 dark:text-blue-400 hover:underline font-medium"
-                        >
-                          {result.title}
-                        </a>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{result.displayUrl}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <SearchResults 
+                results={searchResults}
+                answer={answer}
+                searchQuery={searchQuery}
+              />
             </div>
           )}
           
           {/* No results state - only show if a search was performed */}
-          {hasSearched && searchResults.length === 0 && !isSearching && !error && (
+          {searchQuery && searchResults.length === 0 && !isSearching && !error && (
             <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8 text-center">
               <p className="text-gray-500 dark:text-gray-400">No results found. Try another search query.</p>
-            </div>
-          )}
-          
-          {/* Suggested questions */}
-          {suggestedQuestions.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6">
-              <h3 className="text-lg font-semibold mb-4">Related Questions</h3>
-              <div className="flex flex-wrap gap-2">
-                {suggestedQuestions.map((question, index) => (
-                  <button
-                    key={index}
-                    onClick={() => handleSearch(question)}
-                    className="px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-full text-sm text-gray-800 dark:text-gray-200 transition-colors"
-                  >
-                    {question}
-                  </button>
-                ))}
-              </div>
             </div>
           )}
         </div>
