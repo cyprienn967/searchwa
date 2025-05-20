@@ -283,6 +283,10 @@ export default function AccountPage() {
         body: JSON.stringify({ email: userEmail, inviteCode, ...data }),
       });
       if (res.ok) {
+        // Automatically generate tailored prompt after saving profile
+        await fetch('/api/generate-tailored-prompt', {
+          method: 'POST',
+        });
         setShowProfileModal(false);
       }
     } finally {
