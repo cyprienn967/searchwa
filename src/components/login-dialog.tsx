@@ -41,6 +41,7 @@ export function LoginDialog() {
       // Store login state in localStorage
       localStorage.setItem("steerLoggedIn", "true");
       localStorage.setItem("steerUserEmail", email);
+      localStorage.setItem("steerInviteCode", inviteCode);
       
       toast.success("Login successful!");
       setIsOpen(false);

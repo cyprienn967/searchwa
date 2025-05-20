@@ -6,6 +6,8 @@ import SearchBar from "@/components/SearchBar";
 import SearchResults from "@/components/SearchResults";
 import { SearchResult } from "@/lib/types";
 import Link from "next/link";
+import ProfileModal from '@/components/ProfileModal';
+import QuickInputModal from '@/components/QuickInputModal';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -18,6 +20,10 @@ export default function AccountPage() {
   const [error, setError] = useState<string | null>(null);
   const [searchCount, setSearchCount] = useState<number>(0);
   const [searchLimitReached, setSearchLimitReached] = useState<boolean>(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [showQuickInput, setShowQuickInput] = useState(false);
+  const [quickInputPosition, setQuickInputPosition] = useState<{ x: number, y: number }>({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -97,6 +103,44 @@ export default function AccountPage() {
       localStorage.setItem("steerLastAnswer", answer);
     }
   }, [searchQuery, searchResults, answer]);
+
+  // Check profile flag on mount
+  useEffect(() => {
+    if (!userEmail) return;
+    let cancelled = false;
+    fetch('/api/check-profile-flag', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: userEmail }),
+    })
+      .then(res => res.json())
+      .then(data => {
+        if (!cancelled) setShowProfileModal(!data.flag);
+      });
+    return () => { cancelled = true; };
+  }, [userEmail]);
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      // Ctrl+I
+      if (e.ctrlKey && e.key.toLowerCase() === 'i') {
+        e.preventDefault();
+        setQuickInputPosition({ x: window.mouseX || window.innerWidth / 2, y: window.mouseY || window.innerHeight / 2 });
+        setShowQuickInput(true);
+      }
+    };
+    // Track mouse position globally
+    const mouseMove = (e: MouseEvent) => {
+      window.mouseX = e.clientX;
+      window.mouseY = e.clientY;
+    };
+    window.addEventListener('keydown', handler);
+    window.addEventListener('mousemove', mouseMove);
+    return () => {
+      window.removeEventListener('keydown', handler);
+      window.removeEventListener('mousemove', mouseMove);
+    };
+  }, []);
 
   const handleSearch = async (query: string) => {
     if (searchLimitReached || searchCount >= MAX_SEARCHES) {
@@ -229,6 +273,23 @@ export default function AccountPage() {
     }
   };
 
+  const handleProfileSubmit = async (data: any) => {
+    setProfileLoading(true);
+    try {
+      const inviteCode = localStorage.getItem('steerInviteCode');
+      const res = await fetch('/api/save-profile', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: userEmail, inviteCode, ...data }),
+      });
+      if (res.ok) {
+        setShowProfileModal(false);
+      }
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -325,6 +386,18 @@ export default function AccountPage() {
             )}
           </div>
         </div>
+
+        {/* Profile Modal */}
+        {showProfileModal && (
+          <ProfileModal
+            onSubmit={handleProfileSubmit}
+            loading={profileLoading}
+          />
+        )}
+
+        {showQuickInput && (
+          <QuickInputModal onClose={() => setShowQuickInput(false)} position={quickInputPosition} />
+        )}
       </div>
     </div>
   );
