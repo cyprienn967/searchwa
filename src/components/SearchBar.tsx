@@ -31,8 +31,7 @@ export default function SearchBar({
     e.preventDefault();
     if (query.trim() && !disabled) {
       onSearch(query.trim());
-      // Clear input after submitting
-      setQuery('');
+      // Don't clear input after submitting so query remains visible
     }
   };
 

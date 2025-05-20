@@ -4,6 +4,7 @@ import { ThemeProvider } from "@/components/themes/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
 import { FaLinkedin } from "react-icons/fa";
 import Link from "next/link";
+import { LoginDialog } from "@/components/login-dialog";
 
 export const metadata: Metadata = {
   title: "Steer",
@@ -92,9 +93,7 @@ export default function RootLayout({
                 </Link>
               </div>
               <div className="flex items-center gap-4">
-                <button className="flex items-center text-base text-black hover:bg-gray-100 px-2 py-1 rounded transition" style={{ fontFamily: "Times New Roman, Times, serif" }}>
-                  <span className="mr-1">🌐</span> English
-                </button>
+                <LoginDialog />
                 <a
                   href="https://cal.com/cyprien-riboud-seydoux"
                   target="_blank"
@@ -114,6 +113,24 @@ export default function RootLayout({
               <span className="text-white text-lg tracking-wide opacity-90">
                 Steer - 2025
               </span>
+              <div className="flex gap-4">
+                <a
+                  href="https://www.linkedin.com/in/cyprienriboudseydoux/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn Cyprien"
+                >
+                  <FaLinkedin className="text-white" size={36} />
+                </a>
+                <a
+                  href="https://www.linkedin.com/in/aidanzhang06/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn Aidan"
+                >
+                  <FaLinkedin className="text-white" size={36} />
+                </a>
+              </div>
             </footer>
           </div>
         </ThemeProvider>
