@@ -286,6 +286,8 @@ export default function AccountPage() {
         // Automatically generate tailored prompt after saving profile
         await fetch('/api/generate-tailored-prompt', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: userEmail }),
         });
         setShowProfileModal(false);
       }

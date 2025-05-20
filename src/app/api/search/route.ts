@@ -1,6 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import Exa from 'exa-js';
 import OpenAI from 'openai';
+import { redis } from '@/lib/redis';
+
+interface UserData {
+  about?: string;
+  age?: string | number;
+  location?: string;
+  code?: string;
+  flag?: boolean;
+  interests?: string[];
+  name?: string;
+  prompt?: string;
+  feedback?: Record<string, any>;
+}
+
+interface UserDatabase {
+  [email: string]: UserData;
+}
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +41,34 @@ export async function POST(request: NextRequest) {
         { status: 503 }
       );
     }
+
+    // Get user's personalized prompt from Redis
+    const userEmail = userContext?.email;
+    if (!userEmail) {
+      return NextResponse.json(
+        { error: 'User email is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get the user's data from the nested structure (now using key '2')
+    const allUsers = await redis.json.get('2') as UserDatabase | null;
+    if (!allUsers) {
+      return NextResponse.json(
+        { error: 'No users found in database' },
+        { status: 404 }
+      );
+    }
+
+    const userData = allUsers[userEmail];
+    if (!userData) {
+      return NextResponse.json(
+        { error: 'User not found' },
+        { status: 404 }
+      );
+    }
+
+    const userPrompt = userData.prompt || '';
 
     // Extract the actual search query if it's a structured prompt
     let actualSearchQuery = query;
@@ -64,7 +109,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Create a system prompt that emphasizes focusing on the user's question
-    const baseSystemPrompt = `You are a personalized search assistant that summarizes search results in a comprehensive, informative manner similar to Perplexity.
+    const baseSystemPrompt = userPrompt || `You are a personalized search assistant that summarizes search results in a comprehensive, informative manner similar to Perplexity.
 
 You will be given the text content from multiple search results for a query. 
 Your task is to create ONE unified, coherent summary that synthesizes information from all sources.
