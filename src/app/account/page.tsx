@@ -44,25 +44,20 @@ export default function AccountPage() {
       
       setUserEmail(email);
       
-      // Restore previous search state from localStorage if available
+      // Restore previous search state from localStorage if available, but only for this user
       try {
-        const savedQuery = localStorage.getItem("steerLastQuery");
-        const savedResults = localStorage.getItem("steerLastResults");
-        const savedAnswer = localStorage.getItem("steerLastAnswer");
+        const savedQuery = localStorage.getItem(`steerLastQuery:${email}`);
+        const savedResults = localStorage.getItem(`steerLastResults:${email}`);
+        const savedAnswer = localStorage.getItem(`steerLastAnswer:${email}`);
         
-        if (savedQuery) {
-          setSearchQuery(savedQuery);
-        }
-        
-        if (savedResults) {
-          setSearchResults(JSON.parse(savedResults));
-        }
-        
-        if (savedAnswer) {
-          setAnswer(savedAnswer);
-        }
+        setSearchQuery(savedQuery || "");
+        setSearchResults(savedResults ? JSON.parse(savedResults) : []);
+        setAnswer(savedAnswer || "");
       } catch (error) {
         console.error("Error restoring search state:", error);
+        setSearchQuery("");
+        setSearchResults([]);
+        setAnswer("");
       }
       
       setIsLoading(false);
@@ -89,20 +84,27 @@ export default function AccountPage() {
     }
   }, [searchResults, isSearching]);
   
-  // Save search state to localStorage when it changes
+  // Save search state to localStorage when it changes (per user)
   useEffect(() => {
+    if (!userEmail) return;
     if (searchQuery) {
-      localStorage.setItem("steerLastQuery", searchQuery);
+      localStorage.setItem(`steerLastQuery:${userEmail}`, searchQuery);
+    } else {
+      localStorage.removeItem(`steerLastQuery:${userEmail}`);
     }
-    
+
     if (searchResults.length > 0) {
-      localStorage.setItem("steerLastResults", JSON.stringify(searchResults));
+      localStorage.setItem(`steerLastResults:${userEmail}`, JSON.stringify(searchResults));
+    } else {
+      localStorage.removeItem(`steerLastResults:${userEmail}`);
     }
-    
+
     if (answer) {
-      localStorage.setItem("steerLastAnswer", answer);
+      localStorage.setItem(`steerLastAnswer:${userEmail}`, answer);
+    } else {
+      localStorage.removeItem(`steerLastAnswer:${userEmail}`);
     }
-  }, [searchQuery, searchResults, answer]);
+  }, [searchQuery, searchResults, answer, userEmail]);
 
   // Check profile flag on mount
   useEffect(() => {
@@ -115,7 +117,10 @@ export default function AccountPage() {
     })
       .then(res => res.json())
       .then(data => {
-        if (!cancelled) setShowProfileModal(!data.flag);
+        if (!cancelled) {
+          // Only show the modal if flag is explicitly false or missing
+          setShowProfileModal(data.flag !== true);
+        }
       });
     return () => { cancelled = true; };
   }, [userEmail]);
@@ -322,6 +327,12 @@ export default function AccountPage() {
           </span>
           <button
             onClick={() => {
+              // Remove all steerLast* keys from localStorage
+              Object.keys(localStorage).forEach(key => {
+                if (key.startsWith("steerLastQuery:") || key.startsWith("steerLastResults:") || key.startsWith("steerLastAnswer:")) {
+                  localStorage.removeItem(key);
+                }
+              });
               localStorage.removeItem("steerLoggedIn");
               localStorage.removeItem("steerUserEmail");
               router.push("/");
@@ -402,7 +413,7 @@ export default function AccountPage() {
         )}
 
         {showQuickInput && (
-          <QuickInputModal onClose={() => setShowQuickInput(false)} position={quickInputPosition} />
+          <QuickInputModal onClose={() => setShowQuickInput(false)} position={quickInputPosition} userEmail={userEmail} lastQuery={searchQuery} lastAnswer={answer} />
         )}
       </div>
     </div>

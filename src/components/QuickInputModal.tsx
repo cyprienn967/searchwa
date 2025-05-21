@@ -1,11 +1,25 @@
 import { useRef, useEffect } from "react";
 
-export default function QuickInputModal({ onClose, position }: { onClose: () => void, position: { x: number, y: number } }) {
+export default function QuickInputModal({ onClose, position, userEmail, lastQuery, lastAnswer }: { onClose: () => void, position: { x: number, y: number }, userEmail: string, lastQuery: string, lastAnswer: string }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     inputRef.current?.focus();
   }, []);
+
+  async function handleSubmitFeedback(feedbackText: string) {
+    if (!feedbackText.trim()) return;
+    await fetch('/api/save-feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: userEmail,
+        feedbackText,
+        query: lastQuery,
+        answer: lastAnswer
+      })
+    });
+  }
 
   return (
     <div
@@ -33,8 +47,9 @@ export default function QuickInputModal({ onClose, position }: { onClose: () => 
         type="text"
         className="w-full rounded px-3 py-2 text-base focus:outline-none m-0"
         placeholder="ENTER to submit feedback"
-        onKeyDown={e => {
+        onKeyDown={async e => {
           if (e.key === "Enter") {
+            await handleSubmitFeedback(e.currentTarget.value);
             onClose();
           }
         }}

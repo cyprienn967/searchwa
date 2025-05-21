@@ -6,11 +6,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { email } = req.body;
   if (!email) return res.status(400).json({ flag: false });
 
-  // Use the JSON get method
-  const user = await redis.json.get('2');
+  // Get all users from Redis
+  const allUsers = await redis.json.get('2');
   let flag = false;
-  if (user && user.email === email) {
-    flag = !!user.flag;
+  if (allUsers && allUsers[email]) {
+    flag = !!allUsers[email].flag;
   }
   return res.status(200).json({ flag });
 } 
