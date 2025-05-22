@@ -129,3 +129,12 @@
   /* background-size: cover; */
   /* background-position: center; */
 }
+
+/* Custom styles for search input placeholder */
+.search-input::placeholder {
+  position: absolute;
+  top: 8px;
+  left: 16px;
+  line-height: 1;
+  transform-origin: top left;
+}

@@ -276,7 +276,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="bg-gray-50 dark:bg-gray-900 flex flex-col">
       {/* Header with user info */}
       <nav className="w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-gray-800" style={{ borderBottom: "none" }}>
         <div className="flex items-center">
@@ -324,9 +324,9 @@ export default function AccountPage() {
         
         {/* Center search box when no search has been performed */}
         {!hasSearched && (
-          <div className="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center">
+          <div className="flex flex-col items-center justify-center py-16">
             <h1 className="text-5xl font-bold mb-12 text-gray-800 dark:text-gray-100" style={{ fontFamily: "Times New Roman, Times, serif" }}>
-              steer
+              search with steer
             </h1>
             <div className="w-full max-w-2xl">
               <SearchBar 
@@ -391,7 +391,13 @@ export default function AccountPage() {
         )}
 
         {showQuickInput && (
-          <QuickInputModal onClose={() => setShowQuickInput(false)} position={quickInputPosition} userEmail={userEmail} lastQuery={searchQuery} lastAnswer={answer} />
+          <QuickInputModal 
+            onClose={() => setShowQuickInput(false)} 
+            position={quickInputPosition} 
+            userEmail={userEmail} 
+            lastQuery={searchQuery} 
+            lastAnswer={answer} 
+          />
         )}
       </div>
     </div>
