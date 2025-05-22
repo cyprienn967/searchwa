@@ -63,7 +63,7 @@ export function LoginDialog() {
         className="flex items-center text-base text-black hover:bg-gray-100 px-3 py-1.5 rounded transition"
         style={{ fontFamily: "Times New Roman, Times, serif" }}
       >
-        Login
+        login
       </button>
 
       {isOpen && (
@@ -138,9 +138,6 @@ export function LoginDialog() {
             <div className="mt-4 text-xs text-gray-500 text-center space-y-1">
               <p>
                 Need an invite? Request one on our home page.
-              </p>
-              <p className="text-indigo-500 pt-2 border-t border-gray-200 mt-2">
-                <b>Development credentials:</b> {PLACEHOLDER_EMAIL} / {PLACEHOLDER_INVITE}
               </p>
             </div>
           </div>

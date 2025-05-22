@@ -38,9 +38,9 @@ export default function SearchBar({
   };
 
   return (
-    <div className={`w-full ${isConversationMode ? '' : 'space-y-4'}`}>
+    <div className={`w-full`}>
       <form onSubmit={handleSubmit} className={`search-container ${isConversationMode ? 'conversation' : ''} flex justify-center`}>
-        <div className={`relative w-full border border-gray-200 dark:border-gray-700 shadow-sm ${centered ? 'shadow-lg' : 'shadow-sm'} rounded-xl bg-white dark:bg-gray-900`}>
+        <div className={`relative w-full rounded-xl bg-white dark:bg-gray-900`}>
           <div className="relative">
             {/* Placeholder text - only shown when input is empty */}
             {!query && !disabled && (

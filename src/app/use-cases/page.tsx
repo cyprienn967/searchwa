@@ -649,9 +649,9 @@ Remember to answer this specific question directly, not just reflect on topics m
           )}
 
           {/* Search bar at the bottom (always visible) */}
-          <div className="fixed bottom-8 left-0 right-0 flex justify-center items-center z-40">
+          <div className="fixed bottom-0 left-0 right-0 flex justify-center items-end z-40">
             <div className="w-full max-w-4xl mx-auto px-6">
-              <div className="px-6 py-5 backdrop-blur-lg bg-white/95 dark:bg-slate-800/95 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700">
+              <div className="px-6 py-5 backdrop-blur-lg bg-white/95 dark:bg-slate-800/95 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700" style={{ transform: 'translateY(-180px)' }}>
                 <SearchBar 
                   onSearch={handleSearch} 
                   initialQuery=""

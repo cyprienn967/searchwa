@@ -282,7 +282,7 @@ export default function AccountPage() {
         <div className="flex items-center">
           <Link href="/">
             <span className="text-2xl font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded transition" style={{ fontFamily: "Times New Roman, Times, serif" }}>
-              steer
+              steer <span className="ml-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-200 px-2 py-0.5 rounded-md uppercase font-medium">beta</span>
             </span>
           </Link>
         </div>
@@ -345,12 +345,16 @@ export default function AccountPage() {
           <div ref={resultsRef} className="flex-1">
             {/* Search results */}
             {searchResults.length > 0 && (
-              <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8">
-                <SearchResults 
-                  results={searchResults}
-                  answer={answer}
-                  searchQuery={searchQuery}
-                />
+              <div className="mb-8" style={{minHeight: 'calc(100vh - 120px)'}}>
+                <div className="h-full overflow-y-auto">
+                  <div className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-5xl">
+                    <SearchResults 
+                      results={searchResults}
+                      answer={answer}
+                      searchQuery={searchQuery}
+                    />
+                  </div>
+                </div>
               </div>
             )}
             
@@ -363,21 +367,16 @@ export default function AccountPage() {
           </div>
         )}
 
-        {/* Search bar at the bottom - only shown after search */}
+        {/* Just the search bar at the bottom - no padding, nothing around it */}
         {hasSearched && (
-          <div className="fixed bottom-0 left-0 right-0 flex justify-center items-end pointer-events-none" style={{zIndex: 50}}>
-            <div className="w-full max-w-2xl px-4 pb-6 pointer-events-auto">
+          <div className="fixed bottom-2 left-0 right-0 z-50 flex justify-center">
+            <div className="w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl overflow-hidden">
               <SearchBar 
                 onSearch={handleSearch} 
                 initialQuery={searchQuery}
                 isConversationMode={true}
                 disabled={isSearching || searchLimitReached}
               />
-              {searchLimitReached && (
-                <div className="mt-2 text-center text-red-600 text-sm">
-                  You've reached the maximum of {MAX_SEARCHES} searches. Please try again later.
-                </div>
-              )}
             </div>
           </div>
         )}
