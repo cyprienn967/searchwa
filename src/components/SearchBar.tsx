@@ -7,13 +7,15 @@ interface SearchBarProps {
   initialQuery?: string;
   isConversationMode?: boolean;
   disabled?: boolean;
+  centered?: boolean;
 }
 
 export default function SearchBar({ 
   onSearch, 
   initialQuery = '', 
   isConversationMode = false,
-  disabled = false 
+  disabled = false,
+  centered = false
 }: SearchBarProps) {
   const [query, setQuery] = useState(initialQuery);
   const initializedRef = useRef(false);
@@ -38,14 +40,14 @@ export default function SearchBar({
   return (
     <div className={`w-full ${isConversationMode ? '' : 'space-y-4'}`}>
       <form onSubmit={handleSubmit} className={`search-container ${isConversationMode ? 'conversation' : ''} flex justify-center`}>
-        <div className={`relative w-full border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl bg-white dark:bg-gray-900`}>
+        <div className={`relative w-full border border-gray-200 dark:border-gray-700 shadow-sm ${centered ? 'shadow-lg' : 'shadow-sm'} rounded-xl bg-white dark:bg-gray-900`}>
           <input
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className={`
               search-input
-              h-10 rounded-lg border-none px-4 pr-12 text-base w-full 
+              ${centered ? 'h-14' : 'h-10'} rounded-lg border-none px-4 pr-12 ${centered ? 'text-lg' : 'text-base'} w-full 
               ${disabled 
                 ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800' 
                 : 'bg-white dark:bg-gray-900'} 
@@ -55,9 +57,7 @@ export default function SearchBar({
             placeholder={
               disabled 
                 ? "Search limit reached"
-                : isConversationMode
-                  ? "Search with Steer"
-                  : "Search the web..."
+                : "Ask anything..."
             }
             disabled={disabled}
             aria-label="Search"
@@ -65,7 +65,7 @@ export default function SearchBar({
           />
           <button
             type="submit"
-            className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-0 m-0 h-7 w-7 bg-transparent border-none ${
+            className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-0 m-0 ${centered ? 'h-9 w-9' : 'h-7 w-7'} bg-transparent border-none ${
               disabled ? 'opacity-50 cursor-not-allowed' : ''
             }`}
             aria-label="Search"

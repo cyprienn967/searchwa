@@ -24,6 +24,7 @@ export default function AccountPage() {
   const [profileLoading, setProfileLoading] = useState(false);
   const [showQuickInput, setShowQuickInput] = useState(false);
   const [quickInputPosition, setQuickInputPosition] = useState<{ x: number, y: number }>({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  const [hasSearched, setHasSearched] = useState(false);
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -31,7 +32,7 @@ export default function AccountPage() {
   const MAX_SEARCHES = 5;
   const remainingSearches = MAX_SEARCHES - searchCount;
   
-  // Check authentication on mount and restore saved search state
+  // Check authentication on mount
   useEffect(() => {
     const checkAuth = () => {
       const isLoggedIn = localStorage.getItem("steerLoggedIn") === "true";
@@ -43,23 +44,6 @@ export default function AccountPage() {
       }
       
       setUserEmail(email);
-      
-      // Restore previous search state from localStorage if available, but only for this user
-      try {
-        const savedQuery = localStorage.getItem(`steerLastQuery:${email}`);
-        const savedResults = localStorage.getItem(`steerLastResults:${email}`);
-        const savedAnswer = localStorage.getItem(`steerLastAnswer:${email}`);
-        
-        setSearchQuery(savedQuery || "");
-        setSearchResults(savedResults ? JSON.parse(savedResults) : []);
-        setAnswer(savedAnswer || "");
-      } catch (error) {
-        console.error("Error restoring search state:", error);
-        setSearchQuery("");
-        setSearchResults([]);
-        setAnswer("");
-      }
-      
       setIsLoading(false);
     };
     
@@ -84,28 +68,6 @@ export default function AccountPage() {
     }
   }, [searchResults, isSearching]);
   
-  // Save search state to localStorage when it changes (per user)
-  useEffect(() => {
-    if (!userEmail) return;
-    if (searchQuery) {
-      localStorage.setItem(`steerLastQuery:${userEmail}`, searchQuery);
-    } else {
-      localStorage.removeItem(`steerLastQuery:${userEmail}`);
-    }
-
-    if (searchResults.length > 0) {
-      localStorage.setItem(`steerLastResults:${userEmail}`, JSON.stringify(searchResults));
-    } else {
-      localStorage.removeItem(`steerLastResults:${userEmail}`);
-    }
-
-    if (answer) {
-      localStorage.setItem(`steerLastAnswer:${userEmail}`, answer);
-    } else {
-      localStorage.removeItem(`steerLastAnswer:${userEmail}`);
-    }
-  }, [searchQuery, searchResults, answer, userEmail]);
-
   // Check profile flag on mount
   useEffect(() => {
     if (!userEmail) return;
@@ -153,6 +115,9 @@ export default function AccountPage() {
       setSearchLimitReached(true);
       return;
     }
+
+    // Set hasSearched to true when a search is performed
+    setHasSearched(true);
 
     // Abort any in-progress request
     if (abortControllerRef.current) {
@@ -327,12 +292,6 @@ export default function AccountPage() {
           </span>
           <button
             onClick={() => {
-              // Remove all steerLast* keys from localStorage
-              Object.keys(localStorage).forEach(key => {
-                if (key.startsWith("steerLastQuery:") || key.startsWith("steerLastResults:") || key.startsWith("steerLastAnswer:")) {
-                  localStorage.removeItem(key);
-                }
-              });
               localStorage.removeItem("steerLoggedIn");
               localStorage.removeItem("steerUserEmail");
               router.push("/");
@@ -346,9 +305,6 @@ export default function AccountPage() {
       
       <div className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
         {/* Main content */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-center mb-8" style={{ fontFamily: "Times New Roman, Times, serif" }}>Search with Steer</h1>
-        </div>
         
         {/* Error display */}
         {error && (
@@ -366,43 +322,65 @@ export default function AccountPage() {
           </div>
         )}
         
-        {/* Search results container - preserved with ref for scrolling */}
-        <div ref={resultsRef} className="flex-1">
-          {/* Search results */}
-          {searchResults.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8">
-              <SearchResults 
-                results={searchResults}
-                answer={answer}
-                searchQuery={searchQuery}
+        {/* Center search box when no search has been performed */}
+        {!hasSearched && (
+          <div className="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center">
+            <h1 className="text-5xl font-bold mb-12 text-gray-800 dark:text-gray-100" style={{ fontFamily: "Times New Roman, Times, serif" }}>
+              steer
+            </h1>
+            <div className="w-full max-w-2xl">
+              <SearchBar 
+                onSearch={handleSearch} 
+                initialQuery=""
+                isConversationMode={true}
+                centered={true}
+                disabled={isSearching || searchLimitReached}
               />
             </div>
-          )}
-          
-          {/* No results state - only show if a search was performed */}
-          {searchQuery && searchResults.length === 0 && !isSearching && !error && (
-            <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8 text-center">
-              <p className="text-gray-500 dark:text-gray-400">No results found. Try another search query.</p>
-            </div>
-          )}
-        </div>
-
-        {/* Search bar at the bottom */}
-        <div className="fixed bottom-0 left-0 right-0 flex justify-center items-end pointer-events-none" style={{zIndex: 50}}>
-          <div className="w-full max-w-2xl px-4 pb-6 pointer-events-auto">
-            <SearchBar 
-              onSearch={handleSearch} 
-              initialQuery={searchQuery}
-              isConversationMode={true}
-              disabled={isSearching || searchLimitReached}
-            />
-            {searchLimitReached && (
-              <div className="mt-2 text-center text-red-600 text-sm">
-                You've reached the maximum of {MAX_SEARCHES} searches. Please try again later.
+          </div>
+        )}
+        
+        {/* Search results container - only shown after search */}
+        {hasSearched && (
+          <div ref={resultsRef} className="flex-1">
+            {/* Search results */}
+            {searchResults.length > 0 && (
+              <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8">
+                <SearchResults 
+                  results={searchResults}
+                  answer={answer}
+                  searchQuery={searchQuery}
+                />
+              </div>
+            )}
+            
+            {/* No results state - only show if a search was performed */}
+            {searchQuery && searchResults.length === 0 && !isSearching && !error && (
+              <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8 text-center">
+                <p className="text-gray-500 dark:text-gray-400">No results found. Try another search query.</p>
               </div>
             )}
           </div>
-        </div>
+        )}
+
+        {/* Search bar at the bottom - only shown after search */}
+        {hasSearched && (
+          <div className="fixed bottom-0 left-0 right-0 flex justify-center items-end pointer-events-none" style={{zIndex: 50}}>
+            <div className="w-full max-w-2xl px-4 pb-6 pointer-events-auto">
+              <SearchBar 
+                onSearch={handleSearch} 
+                initialQuery={searchQuery}
+                isConversationMode={true}
+                disabled={isSearching || searchLimitReached}
+              />
+              {searchLimitReached && (
+                <div className="mt-2 text-center text-red-600 text-sm">
+                  You've reached the maximum of {MAX_SEARCHES} searches. Please try again later.
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Profile Modal */}
         {showProfileModal && (
