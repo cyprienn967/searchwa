@@ -22,8 +22,8 @@ export default function UserLayout({
   return (
     <ThemeProviderWrapper>
       <HistoryProvider>
-        <div className={`account-page-container min-h-screen ${inter.className} antialiased flex flex-col`}>
-          <div className="flex-1 flex flex-col">
+        <div className={`account-page-container h-screen max-h-screen overflow-hidden ${inter.className} antialiased flex flex-col`}>
+          <div className="flex-1 flex flex-col overflow-y-auto">
             {/* History Menu */}
             <ClientHistoryMenu />
             
@@ -31,12 +31,7 @@ export default function UserLayout({
             {children}
           </div>
           
-          {/* Footer */}
-          <footer className="w-full bg-gradient-to-r from-[#7B2FF2] via-[#F357A8] to-[#FFD86F] py-6 px-8 flex items-center">
-            <span className="text-white text-lg tracking-wide opacity-90">
-              Steer - 2025
-            </span>
-          </footer>
+          {/* Footer removed */}
         </div>
       </HistoryProvider>
     </ThemeProviderWrapper>

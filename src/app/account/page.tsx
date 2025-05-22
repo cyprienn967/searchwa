@@ -88,18 +88,29 @@ export default function AccountPage() {
   }, [userEmail]);
 
   useEffect(() => {
+    // Add mouseX and mouseY to Window interface
+    interface WindowWithMouse extends Window {
+      mouseX?: number;
+      mouseY?: number;
+    }
+    
+    const windowWithMouse = window as WindowWithMouse;
+    
     const handler = (e: KeyboardEvent) => {
       // Ctrl+I
       if (e.ctrlKey && e.key.toLowerCase() === 'i') {
         e.preventDefault();
-        setQuickInputPosition({ x: window.mouseX || window.innerWidth / 2, y: window.mouseY || window.innerHeight / 2 });
+        setQuickInputPosition({ 
+          x: windowWithMouse.mouseX || window.innerWidth / 2, 
+          y: windowWithMouse.mouseY || window.innerHeight / 2 
+        });
         setShowQuickInput(true);
       }
     };
     // Track mouse position globally
     const mouseMove = (e: MouseEvent) => {
-      window.mouseX = e.clientX;
-      window.mouseY = e.clientY;
+      windowWithMouse.mouseX = e.clientX;
+      windowWithMouse.mouseY = e.clientY;
     };
     window.addEventListener('keydown', handler);
     window.addEventListener('mousemove', mouseMove);
@@ -276,7 +287,7 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <div className="bg-gray-50 dark:bg-gray-900 flex flex-col min-h-screen overflow-x-hidden overflow-y-auto max-h-screen">
       {/* Header with user info */}
       <nav className="w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-gray-800" style={{ borderBottom: "none" }}>
         <div className="flex items-center">
@@ -329,13 +340,15 @@ export default function AccountPage() {
               search with steer
             </h1>
             <div className="w-full max-w-2xl">
-              <SearchBar 
-                onSearch={handleSearch} 
-                initialQuery=""
-                isConversationMode={true}
-                centered={true}
-                disabled={isSearching || searchLimitReached}
-              />
+              <div className="border-2 border-gray-300 dark:border-gray-600 shadow-md rounded-xl overflow-hidden">
+                <SearchBar 
+                  onSearch={handleSearch} 
+                  initialQuery=""
+                  isConversationMode={true}
+                  centered={true}
+                  disabled={isSearching || searchLimitReached}
+                />
+              </div>
             </div>
           </div>
         )}
@@ -347,7 +360,7 @@ export default function AccountPage() {
             {searchResults.length > 0 && (
               <div className="mb-8" style={{minHeight: 'calc(100vh - 120px)'}}>
                 <div className="h-full overflow-y-auto">
-                  <div className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-5xl">
+                  <div className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-4xl">
                     <SearchResults 
                       results={searchResults}
                       answer={answer}
@@ -369,16 +382,20 @@ export default function AccountPage() {
 
         {/* Just the search bar at the bottom - no padding, nothing around it */}
         {hasSearched && (
-          <div className="fixed bottom-2 left-0 right-0 z-50 flex justify-center">
-            <div className="w-full max-w-2xl border border-gray-200 dark:border-gray-700 shadow-sm rounded-xl overflow-hidden">
-              <SearchBar 
-                onSearch={handleSearch} 
-                initialQuery={searchQuery}
-                isConversationMode={true}
-                disabled={isSearching || searchLimitReached}
-              />
+          <>
+            <div className="fixed bottom-2 left-0 right-0 z-50 flex justify-center">
+              <div className="w-full max-w-3xl border-2 border-gray-300 dark:border-gray-600 shadow-md rounded-xl overflow-hidden">
+                <SearchBar 
+                  onSearch={handleSearch} 
+                  initialQuery={searchQuery}
+                  isConversationMode={true}
+                  disabled={isSearching || searchLimitReached}
+                />
+              </div>
             </div>
-          </div>
+            {/* White bar below search bar */}
+            <div className="fixed bottom-0 left-0 right-0 z-40 h-2 bg-white dark:bg-gray-900"></div>
+          </>
         )}
 
         {/* Profile Modal */}

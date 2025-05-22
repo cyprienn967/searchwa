@@ -2,12 +2,9 @@
 
 import { ThemeProvider } from "@/components/themes/theme-provider";
 import { Toaster } from "@/components/ui/sonner";
-import { FaLinkedin } from "react-icons/fa";
 import Link from "next/link";
 import { LoginDialog } from "@/components/login-dialog";
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
-import UserHeader from "@/components/UserHeader";
 
 export default function RootLayoutClient({
   children,
@@ -15,45 +12,8 @@ export default function RootLayoutClient({
   children: React.ReactNode;
 }) {
   const pathname = usePathname() || '';
-  const isAccountPage = pathname.startsWith('/account');
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const isAccountPage = pathname.startsWith('/account') || pathname.match(/^\/[^/]+$/); // Match /account or /{username}
   
-  // Check if user is logged in
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    
-    // Initial check
-    const checkLoginStatus = () => {
-      const loggedIn = localStorage.getItem("steerLoggedIn") === "true";
-      setIsLoggedIn(loggedIn);
-    };
-    
-    // Check on mount
-    checkLoginStatus();
-    
-    // Set up event listener for storage changes
-    const handleStorageChange = (e: StorageEvent) => {
-      if (e.key === "steerLoggedIn") {
-        checkLoginStatus();
-      }
-    };
-    
-    // Listen for storage events (for when logout happens in another tab)
-    window.addEventListener('storage', handleStorageChange);
-    
-    // Custom event for login/logout within the same tab
-    const handleAuthChange = () => {
-      checkLoginStatus();
-    };
-    
-    window.addEventListener('authStateChanged', handleAuthChange);
-    
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('authStateChanged', handleAuthChange);
-    };
-  }, []);
-
   return (
     <>
       {/* Top sliver bar */}
@@ -66,9 +26,9 @@ export default function RootLayoutClient({
       >
         <Toaster position="bottom-center" />
         <div className="min-h-screen flex flex-col justify-between">
-          {/* Show main landing navbar when not logged in and on landing page */}
-          {!isLoggedIn && !isAccountPage && (
-            <nav className="main-header w-full flex items-center justify-between px-8 py-4 bg-white" style={{ borderBottom: "none" }}>
+          {/* Only show navigation when not on account pages */}
+          {!isAccountPage && (
+            <nav className="w-full flex items-center justify-between px-8 py-4 bg-white" style={{ borderBottom: "none" }}>
               <div className="flex items-center gap-8">
                 <Link
                   href="/"
@@ -101,14 +61,29 @@ export default function RootLayoutClient({
               </div>
               <div className="flex items-center gap-4">
                 <LoginDialog />
+                <a
+                  href="https://cal.com/cyprien-riboud-seydoux"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-base text-black hover:bg-gray-100 px-2 py-1 rounded transition"
+                  style={{ fontFamily: "Times New Roman, Times, serif" }}
+                >
+                  contact
+                </a>
               </div>
             </nav>
           )}
-          
-          {/* Show simplified user header when logged in */}
-          {isLoggedIn && !isAccountPage && <UserHeader />}
-          
-          {children}
+          <div className="flex-1 flex flex-col">
+            {children}
+          </div>
+          {/* Only show footer when not on account pages */}
+          {!isAccountPage && (
+            <footer className="w-full bg-gradient-to-r from-[#7B2FF2] via-[#F357A8] to-[#FFD86F] py-6 px-4 flex items-center justify-between">
+              <span className="text-white text-lg tracking-wide opacity-90">
+                Steer - 2025
+              </span>
+            </footer>
+          )}
         </div>
       </ThemeProvider>
     </>

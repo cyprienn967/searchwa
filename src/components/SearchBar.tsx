@@ -62,11 +62,13 @@ export default function SearchBar({
                 transition-colors
                 focus:outline-none focus:ring-0
               `}
-              placeholder={disabled ? "Search limit reached" : ""}
+              placeholder=""
               disabled={disabled}
               aria-label="Search"
               style={{ 
-                fontFamily: 'Inter, sans-serif'
+                fontFamily: 'Inter, sans-serif',
+                paddingTop: centered ? undefined : '0.75rem',
+                paddingBottom: centered ? undefined : '0.25rem'
               }}
             />
           </div>
