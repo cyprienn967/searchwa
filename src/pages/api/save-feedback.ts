@@ -21,7 +21,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { email, feedbackText, query, answer } = req.body;
   if (!email || !feedbackText || !query || !answer) return res.status(400).json({ success: false });
 
-  const allUsers = await redis.json.get('2') as UserDatabase | null;
+  const allUsers = await redis.json.get('userdata') as UserDatabase | null;
   if (!allUsers || !allUsers[email]) return res.status(404).json({ success: false });
 
   // Store feedback as an array of entries
@@ -35,7 +35,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   allUsers[email].feedback = feedbackArr;
 
-  await redis.json.set('2', '$', allUsers);
+  await redis.json.set('userdata', '$', allUsers);
 
   return res.status(200).json({ success: true });
 } 

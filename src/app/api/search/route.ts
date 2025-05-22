@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get the user's data from the nested structure (now using key '2')
-    const allUsers = await redis.json.get('2') as UserDatabase | null;
+    const allUsers = await redis.json.get('userdata') as UserDatabase | null;
     if (!allUsers) {
       return NextResponse.json(
         { error: 'No users found in database' },

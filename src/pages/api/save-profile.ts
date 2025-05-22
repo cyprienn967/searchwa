@@ -24,7 +24,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     // Get all users from Redis (now using key '2')
-    const allUsers = await redis.json.get('2') as UserDatabase | null;
+    const allUsers = await redis.json.get('userdata') as UserDatabase | null;
     
     // Prepare the updated user object
     const updatedUser: UserData = {
@@ -46,7 +46,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     };
 
     // Save the updated users object back to Redis (now using key '2')
-    await redis.json.set('2', '$', updatedUsers);
+    await redis.json.set('userdata', '$', updatedUsers);
 
     return res.status(200).json({ success: true });
   } catch (error) {

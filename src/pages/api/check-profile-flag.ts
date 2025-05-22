@@ -7,7 +7,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   if (!email) return res.status(400).json({ flag: false });
 
   // Get all users from Redis
-  const allUsers = await redis.json.get('2');
+  const allUsers = await redis.json.get('userdata');
   let flag = false;
   if (allUsers && allUsers[email]) {
     flag = !!allUsers[email].flag;

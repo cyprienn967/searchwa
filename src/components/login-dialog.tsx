@@ -33,8 +33,8 @@ export function LoginDialog() {
         body: JSON.stringify({ email, inviteCode }),
       });
       const data = await res.json();
-      if (!data.exists) {
-        toast.error("Account not found or invite code incorrect");
+      if (!data.success) {
+        toast.error(data.error || "Account not found or invite code incorrect");
         setIsLoading(false);
         return;
       }

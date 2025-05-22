@@ -27,7 +27,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   // Fetch all users from Redis (now using key '2')
-  const allUsers = await redis.json.get('2') as UserDatabase | null;
+  const allUsers = await redis.json.get('userdata') as UserDatabase | null;
   if (!allUsers) {
     return res.status(404).json({ error: 'No users found' });
   }
@@ -88,7 +88,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           prompt: tailoredPrompt
         }
       };
-      await redis.json.set('2', '$', updatedUsers);
+      await redis.json.set('userdata', '$', updatedUsers);
     } catch (redisError) {
       console.error('Error saving to Redis:', redisError);
       // Continue even if Redis save fails - we still want to return the prompt
