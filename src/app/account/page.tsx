@@ -428,10 +428,6 @@ export default function AccountPage() {
           <span className={`${getFontSizeClass('small')} text-gray-600 dark:text-gray-300 font-semibold`}>
             {userName || userEmail}
           </span>
-          <SettingsDropdown 
-            currentFontSize={globalFontSize}
-            onFontSizeChange={handleFontSizeChange}
-          />
           <button
             onClick={() => {
               localStorage.removeItem("steerLoggedIn");
@@ -443,6 +439,10 @@ export default function AccountPage() {
           >
             Logout
           </button>
+          <SettingsDropdown 
+            currentFontSize={globalFontSize}
+            onFontSizeChange={handleFontSizeChange}
+          />
         </div>
       </nav>
       

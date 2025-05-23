@@ -35,6 +35,17 @@ export default function SearchResults({ results, answer, citations, searchQuery,
   // Add console logging to debug citations
   console.log('SearchResults props:', { results, answer, citations, searchQuery });
   
+  // Helper function to extract domain from URL for favicon
+  const getFaviconUrl = (url: string) => {
+    try {
+      const domain = new URL(url).hostname;
+      return `https://www.google.com/s2/favicons?domain=${domain}&sz=32`;
+    } catch {
+      // Fallback for invalid URLs
+      return `https://www.google.com/s2/favicons?domain=google.com&sz=32`;
+    }
+  };
+
   // Helper to parse answer and replace markdown formatting and citations
   function renderAnswerWithCitations(text: string) {
     if (!text) return [];
@@ -327,15 +338,42 @@ export default function SearchResults({ results, answer, citations, searchQuery,
                   rel="noopener noreferrer" 
                   className="flex items-center h-[72px] p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group-hover:border-blue-300 dark:group-hover:border-blue-700 group-hover:shadow-md"
                 >
-                  <div className="ml-3 flex-1 min-w-0 overflow-hidden">
-                    <div className={`${getFontSizeClass('title')} font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate`}>
-                      {result.title}
+                  {/* Content area */}
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <div className="flex items-center gap-1 mb-1">
+                      {/* Citation-style number badge */}
+                      <span className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 text-xs font-semibold rounded bg-blue-100 text-blue-800 group-hover:bg-blue-200 dark:bg-blue-800/30 dark:text-blue-400 dark:group-hover:bg-blue-800/50 transition-colors flex-shrink-0">
+                        {index + 1}
+                      </span>
+                      <div className={`${getFontSizeClass('title')} font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate`}>
+                        {result.title}
+                      </div>
                     </div>
-                    <div className={`${getFontSizeClass('small')} text-gray-500 dark:text-gray-400 truncate`}>
+                    <div className={`${getFontSizeClass('small')} text-gray-500 dark:text-gray-400 truncate ml-6`}>
                       {result.displayUrl}
                     </div>
                   </div>
-                  <span className={`ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center ${getFontSizeClass('small')} text-white bg-blue-500 rounded-full font-medium group-hover:bg-blue-600`}>{index + 1}</span>
+                  
+                  {/* Website favicon on the right */}
+                  <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center ml-3">
+                    <img
+                      src={getFaviconUrl(result.url)}
+                      alt={`${result.title} favicon`}
+                      className="w-6 h-6 rounded-sm"
+                      onError={(e) => {
+                        // Fallback to a generic icon if favicon fails to load
+                        const target = e.target as HTMLImageElement;
+                        target.style.display = 'none';
+                        target.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                    {/* Fallback icon */}
+                    <div className="hidden w-6 h-6 bg-gray-300 dark:bg-gray-600 rounded-sm flex items-center justify-center">
+                      <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 01-9 9m9-9a9 9 0 00-9-9m9 9H3m9 9v-9m0-9v9" />
+                      </svg>
+                    </div>
+                  </div>
                 </a>
               </div>
             ))}
