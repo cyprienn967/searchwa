@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getUserByEmail } from '@/lib/redis';
+import { redis } from '../../../lib/redis';
 
 export async function POST(request: NextRequest) {
   try {
@@ -27,38 +27,54 @@ export async function POST(request: NextRequest) {
       }
     }
     
-    // For all other accounts, check if they exist using the updated functions
-    const userData = await getUserByEmail(email);
-    console.log('userData:', userData ? 'found' : 'not found');
-    
-    // Check if user exists and the invite code matches
-    if (userData) {
-      const isValidCode = userData.code === inviteCode;
-      console.log('User exists, invite code valid:', isValidCode);
+    // For all other accounts, get the userdata object that contains all users
+    try {
+      const allUsers = await redis.json.get('userdata') as Record<string, any>;
+      console.log('Looking up user:', email);
       
-      if (isValidCode) {
-        return NextResponse.json({ 
-          success: true, 
-          message: 'Account exists and invite code is valid',
-          user: {
-            email: userData.email,
-            id: userData.id || 'user1'
-          }
-        });
-      } else {
+      if (!allUsers) {
+        console.log('No userdata found in Redis');
         return NextResponse.json({ 
           success: false, 
-          error: 'Invalid invite code'
-        }, { status: 401 });
+          error: 'Account not found'
+        }, { status: 404 });
       }
+
+      const userData = allUsers[email];
+      console.log('userData:', userData ? 'found' : 'not found');
+      
+      if (userData) {
+        const isValidCode = userData.code === inviteCode;
+        console.log('User exists, invite code valid:', isValidCode);
+        
+        if (isValidCode) {
+          return NextResponse.json({ 
+            success: true, 
+            message: 'Account exists and invite code is valid',
+            user: {
+              email: email,
+              id: email // Using email as ID since that's how we're storing it
+            }
+          });
+        } else {
+          return NextResponse.json({ 
+            success: false, 
+            error: 'Invalid invite code'
+          }, { status: 401 });
+        }
+      }
+      
+      // User not found, return error
+      console.log('User not found');
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Account not found'
+      }, { status: 404 });
+      
+    } catch (err) {
+      console.error('Error looking up user:', err);
+      throw err; // Re-throw to be caught by outer try-catch
     }
-    
-    // User not found, return error
-    console.log('User not found');
-    return NextResponse.json({ 
-      success: false, 
-      error: 'Account not found'
-    }, { status: 404 });
   } catch (error) {
     console.error('Error checking account:', error);
     return NextResponse.json({ 

@@ -307,17 +307,32 @@ export default function AccountPage() {
       const res = await fetch('/api/save-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: userEmail, inviteCode, ...data }),
+        body: JSON.stringify({ 
+          email: userEmail, 
+          inviteCode, 
+          name: data.name,
+          age: data.age,
+          location: data.location,
+          about: data.about,
+          interests: data.interests || [],
+          feedback: data.feedback || [],
+          flag: data.flag ?? false,
+          prompt: data.prompt || ''
+        }),
       });
-      if (res.ok) {
-        // Automatically generate tailored prompt after saving profile
-        await fetch('/api/generate-tailored-prompt', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: userEmail }),
-        });
+      
+      const responseData = await res.json();
+      
+      if (res.ok && responseData.success) {
         setShowProfileModal(false);
+        return true;
+      } else {
+        console.error('Failed to save profile:', responseData.error);
+        return false;
       }
+    } catch (error) {
+      console.error('Error saving profile:', error);
+      return false;
     } finally {
       setProfileLoading(false);
     }
@@ -551,7 +566,10 @@ export default function AccountPage() {
         {showProfileModal && (
           <ProfileModal
             onSubmit={handleProfileSubmit}
+            onClose={() => setShowProfileModal(false)}
             loading={profileLoading}
+            userEmail={userEmail}
+            inviteCode={localStorage.getItem('steerInviteCode') || ''}
           />
         )}
 

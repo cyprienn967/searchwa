@@ -1,58 +1,77 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
+import { NextRequest, NextResponse } from 'next/server';
 import { redis } from '@/lib/redis';
 
 interface UserData {
-  about?: string;
-  age?: string | number;
-  code?: string;
-  flag?: boolean;
-  interests?: string[];
-  name?: string;
-  prompt?: string;
-  feedback?: Record<string, any>;
-  usage?: string;
-  answerFormat?: string;
+  about: string;
+  age: string | number;
+  code: string;
+  flag: boolean;
+  interests: string[];
+  name: string;
+  prompt: string;
+  feedback: any[];
+  location: string;
 }
 
 interface UserDatabase {
   [email: string]: UserData;
 }
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== 'POST') return res.status(405).end();
-  const { email, inviteCode, name, age, about, usage, answerFormat } = req.body;
-  if (!email || !inviteCode || !name || !age || !about || !usage || !answerFormat) return res.status(400).json({ success: false });
-
+export async function POST(request: NextRequest) {
   try {
+    const body = await request.json();
+    const { email, inviteCode, name, age, about, location, interests, feedback, flag, prompt } = body;
+    
+    if (!email || !inviteCode || !name || !age || !about || !location) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Missing required fields' 
+      }, { status: 400 });
+    }
+
     // Get all users from Redis
-    const allUsers = await redis.json.get('userdata') as UserDatabase | null;
+    let allUsers: UserDatabase | null = null;
+    try {
+      allUsers = await redis.json.get('userdata') as UserDatabase | null;
+    } catch (error) {
+      // If the key doesn't exist or isn't a JSON, initialize it
+      await redis.json.set('userdata', '$', {});
+      allUsers = {};
+    }
+    
+    // If allUsers is still null after initialization, create an empty object
+    if (!allUsers) {
+      allUsers = {};
+    }
     
     // Prepare the updated user object
     const updatedUser: UserData = {
       code: inviteCode,
-      flag: true,
+      flag: flag ?? false,
       name,
       age,
+      location,
       about,
-      usage,
-      answerFormat,
-      interests: allUsers?.[email]?.interests || [],
-      feedback: allUsers?.[email]?.feedback || {},
-      prompt: allUsers?.[email]?.prompt || ''
+      interests: interests || [],
+      feedback: feedback || [],
+      prompt: prompt || ''
     };
 
     // Update the users object with the new user data
     const updatedUsers: UserDatabase = {
-      ...(allUsers || {}),
+      ...allUsers,
       [email]: updatedUser
     };
 
     // Save the updated users object back to Redis
     await redis.json.set('userdata', '$', updatedUsers);
 
-    return res.status(200).json({ success: true });
+    return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error saving profile:', error);
-    return res.status(500).json({ success: false });
+    return NextResponse.json({ 
+      success: false, 
+      error: 'Failed to save profile' 
+    }, { status: 500 });
   }
 } 

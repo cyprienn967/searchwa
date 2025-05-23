@@ -407,16 +407,11 @@ export default function UserPage({ params }: UserPageProps) {
       
       {/* Profile Modal */}
       <ProfileModal
-        isOpen={showProfileModal}
+        onSubmit={handleSaveProfile}
         onClose={() => setShowProfileModal(false)}
-        onSave={handleSaveProfile}
-        initialData={{
-          name: userName,
-          age: userAge,
-          location: userLocation,
-          about: userAbout
-        }}
-        isLoading={profileLoading}
+        loading={profileLoading}
+        userEmail={userEmail}
+        inviteCode={localStorage.getItem('steerInviteCode') || ''}
       />
       
       {/* Quick Input Modal */}
