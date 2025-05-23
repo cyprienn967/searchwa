@@ -4,8 +4,6 @@ export default function ProfileModal({ onSubmit, loading }: { onSubmit: (data: a
   const [name, setName] = useState("");
   const [age, setAge] = useState("");
   const [about, setAbout] = useState("");
-  const [usage, setUsage] = useState("");
-  const [answerFormat, setAnswerFormat] = useState("");
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
@@ -16,7 +14,7 @@ export default function ProfileModal({ onSubmit, loading }: { onSubmit: (data: a
           className="space-y-4 overflow-y-auto p-6 pt-0"
           onSubmit={e => {
             e.preventDefault();
-            onSubmit({ name, age, about, usage, answerFormat });
+            onSubmit({ name, age, about });
           }}
         >
           <div>
@@ -44,31 +42,15 @@ export default function ProfileModal({ onSubmit, loading }: { onSubmit: (data: a
           <div>
             <label className="block text-sm font-medium mb-1">Tell us about yourself</label>
             <textarea 
-              className="w-full border rounded px-3 py-2 min-h-[100px]" 
+              className="w-full border rounded px-3 py-2 min-h-[200px]" 
               value={about} 
               onChange={e => setAbout(e.target.value)} 
               required 
-              placeholder="I'm in high school studying for my AP exams. I'm interested in science and I'm experienced in tech, and I'm starting to teach myself to code. I'm not too good at writing English though :)"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">How will you use Steer?</label>
-            <textarea 
-              className="w-full border rounded px-3 py-2 min-h-[100px]" 
-              value={usage} 
-              onChange={e => setUsage(e.target.value)} 
-              required 
-              placeholder="mostly to search random science stuff up like with Google, but also to understand the latest news in politics"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-1">How do you want your answers?</label>
-            <textarea 
-              className="w-full border rounded px-3 py-2 min-h-[100px]" 
-              value={answerFormat} 
-              onChange={e => setAnswerFormat(e.target.value)} 
-              required 
-              placeholder="bullet points help me understand best"
+              placeholder="I'm in high school studying for my AP exams. I'm interested in science and I'm experienced in tech, and I'm starting to teach myself to code. I'm not too good at writing English though :)
+
+I'll mostly use Steer to search random science stuff up like with Google, but also to understand the latest news in politics.
+
+For answers, bullet points help me understand best!"
             />
           </div>
         </form>
