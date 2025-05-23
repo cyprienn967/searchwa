@@ -55,7 +55,7 @@ export default function SearchBar({
               onChange={(e) => setQuery(e.target.value)}
               className={`
                 search-input
-                ${centered ? 'h-24' : 'h-10'} rounded-xl border-none px-4 pr-12 ${centered ? 'text-lg' : 'text-base'} w-full 
+                ${centered ? 'h-24' : 'h-12'} rounded-xl border-none px-4 pr-12 ${centered ? 'text-lg' : 'text-base'} w-full 
                 ${disabled 
                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed dark:bg-gray-800' 
                   : 'bg-white dark:bg-gray-900'} 
@@ -67,14 +67,14 @@ export default function SearchBar({
               aria-label="Search"
               style={{ 
                 fontFamily: 'Inter, sans-serif',
-                paddingTop: centered ? undefined : '0.75rem',
-                paddingBottom: centered ? undefined : '0.25rem'
+                paddingTop: centered ? undefined : '0.875rem',
+                paddingBottom: centered ? undefined : '0.875rem'
               }}
             />
           </div>
           <button
             type="submit"
-            className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-0 m-0 ${centered ? 'h-9 w-9' : 'h-7 w-7'} bg-transparent border-none ${
+            className={`absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center p-0 m-0 ${centered ? 'h-9 w-9' : 'h-8 w-8'} bg-transparent border-none ${
               disabled ? 'opacity-50 cursor-not-allowed' : ''
             }`}
             aria-label="Search"

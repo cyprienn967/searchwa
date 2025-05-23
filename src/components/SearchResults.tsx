@@ -310,10 +310,10 @@ export default function SearchResults({ results, answer, citations, searchQuery,
                   href={result.url}
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group-hover:border-blue-300 dark:group-hover:border-blue-700 group-hover:shadow-md"
+                  className="flex items-center h-[72px] p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group-hover:border-blue-300 dark:group-hover:border-blue-700 group-hover:shadow-md"
                 >
-                  <div className="ml-3 flex-1 min-w-0">
-                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                  <div className="ml-3 flex-1 min-w-0 overflow-hidden">
+                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
                       {result.title}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 truncate">

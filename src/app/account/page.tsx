@@ -12,6 +12,7 @@ import QuickInputModal from '@/components/QuickInputModal';
 export default function AccountPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string>("");
+  const [userName, setUserName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(() => {
     if (typeof window !== 'undefined') {
@@ -63,7 +64,24 @@ export default function AccountPage() {
       }
       
       setUserEmail(email);
-      setIsLoading(false);
+      
+      // Fetch user data to get the name
+      fetch('/api/get-user-data', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+        .then(res => res.json())
+        .then(response => {
+          if (response.success && response.data.name) {
+            setUserName(response.data.name);
+          }
+          setIsLoading(false);
+        })
+        .catch(error => {
+          console.error('Error fetching user data:', error);
+          setIsLoading(false);
+        });
     };
     
     // Short delay to ensure localStorage is available (client-side)
@@ -153,8 +171,8 @@ export default function AccountPage() {
   const handleSearch = async (query: string) => {
     if (!query.trim()) return;
 
-    // If this is the first search (coming from the search box), reset past searches
-    if (!hasSearched) {
+    // If this is a search from the main search interface (centered search box), reset past searches
+    if (!hasSearched || document.querySelector('.search-input.h-24')) {
       setPastSearches([]);
     }
 
@@ -305,6 +323,18 @@ export default function AccountPage() {
     }
   };
 
+  // Add a function to reset search state
+  const resetSearch = () => {
+    setHasSearched(false);
+    setSearchQuery("");
+    setSearchResults([]);
+    setAnswer("");
+    setPastSearches([]);
+    // Clear from localStorage too
+    localStorage.removeItem('lastSearchQuery');
+    localStorage.removeItem('pastSearches');
+  };
+
   // Show loading state while checking authentication
   if (isLoading) {
     return (
@@ -325,9 +355,14 @@ export default function AccountPage() {
             </span>
           </Link>
         </div>
+        <div className="absolute left-1/2 transform -translate-x-1/2">
+          <span className="text-sm text-gray-500 dark:text-gray-400">
+            CTRL+I for feedback!
+          </span>
+        </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600 dark:text-gray-300">
-            Logged in as <span className="font-semibold">{userEmail}</span>
+          <span className="text-sm text-gray-600 dark:text-gray-300 font-semibold">
+            {userName || userEmail}
           </span>
           <button
             onClick={() => {
@@ -381,8 +416,17 @@ export default function AccountPage() {
                 key={index} 
                 className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-4xl mb-6 border-b-4 border-gray-100 dark:border-gray-700 pb-6 relative rounded-lg"
               >
-                <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm py-3 border-b border-gray-200 dark:border-gray-700 -mx-6 px-6 mb-6">
+                <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm py-3 border-b border-gray-200 dark:border-gray-700 -mx-6 px-6 mb-6 shadow-sm">
                   <div className="flex items-center mb-2">
+                    <button
+                      onClick={resetSearch}
+                      className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors mr-3"
+                      title="New Search"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      </svg>
+                    </button>
                     <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
                     <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
                       Search Results for
@@ -414,6 +458,32 @@ export default function AccountPage() {
                     <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
                       Search Results for
                     </h3>
+                    <div className="flex items-center gap-2 ml-auto">
+                      <button
+                        onClick={() => {
+                          setQuickInputPosition({ 
+                            x: window.innerWidth / 2, 
+                            y: window.innerHeight / 2 
+                          });
+                          setShowQuickInput(true);
+                        }}
+                        className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        title="Give Feedback"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7.5 8.25h9m-9 3H12m-9.75 1.51c0 1.6 1.123 2.994 2.707 3.227 1.129.166 2.27.293 3.423.379.35.026.67.21.865.501L12 21l2.755-4.133a1.14 1.14 0 01.865-.501 48.172 48.172 0 003.423-.379c1.584-.233 2.707-1.626 2.707-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0012 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018z" />
+                        </svg>
+                      </button>
+                      <button
+                        onClick={resetSearch}
+                        className="w-6 h-6 flex items-center justify-center rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                        title="New Search"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                        </svg>
+                      </button>
+                    </div>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
                     <p className="text-xl font-medium text-gray-900 dark:text-gray-100 break-words">
