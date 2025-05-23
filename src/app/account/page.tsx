@@ -304,6 +304,8 @@ export default function AccountPage() {
     setProfileLoading(true);
     try {
       const inviteCode = localStorage.getItem('steerInviteCode');
+      
+      // First save the profile
       const res = await fetch('/api/save-profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -323,13 +325,30 @@ export default function AccountPage() {
       
       const responseData = await res.json();
       
-      if (res.ok && responseData.success) {
-        setShowProfileModal(false);
-        return true;
-      } else {
+      if (!res.ok || !responseData.success) {
         console.error('Failed to save profile:', responseData.error);
         return false;
       }
+
+      // After successful profile save, generate tailored prompt
+      const promptRes = await fetch('/api/generate-tailored-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          about: data.about,
+          age: data.age,
+          location: data.location
+        }),
+      });
+
+      if (!promptRes.ok) {
+        console.error('Failed to generate prompt:', await promptRes.text());
+        // Don't return false here, as the profile was saved successfully
+      }
+
+      setShowProfileModal(false);
+      return true;
     } catch (error) {
       console.error('Error saving profile:', error);
       return false;

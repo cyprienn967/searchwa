@@ -81,14 +81,14 @@ export default function ProfileModal({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-1">Location</label>
+            <label className="block text-sm font-medium mb-1">Country</label>
             <input
               type="text"
               className="w-full border rounded px-3 py-2"
               value={location}
               onChange={e => setLocation(e.target.value)}
               required
-              placeholder="Your location"
+              placeholder="United States"
             />
           </div>
           <div>

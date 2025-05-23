@@ -44,7 +44,7 @@ export default function SearchBar({
           <div className="relative">
             {/* Placeholder text - only shown when input is empty */}
             {!query && !disabled && (
-              <div className="absolute top-3 left-4 text-gray-400 pointer-events-none">
+              <div className="absolute top-3 left-4 text-gray-400 pointer-events-none text-lg">
                 Ask anything...
               </div>
             )}

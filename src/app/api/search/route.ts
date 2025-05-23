@@ -68,7 +68,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const userPrompt = userData.prompt || '';
+    if (!userData.prompt) {
+      console.error(`No personalized prompt found for user ${userEmail}, generating new prompt...`);
+      // Call the generate-tailored-prompt endpoint to create a personalized prompt
+      const response = await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/generate-tailored-prompt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: userEmail }),
+      });
+
+      if (!response.ok) {
+        console.error(`Failed to generate personalized prompt for user ${userEmail}`);
+        return NextResponse.json(
+          { error: 'Failed to generate personalized prompt' },
+          { status: 500 }
+        );
+      }
+
+      const { prompt } = await response.json();
+      
+      // Create a new user data object with the updated prompt
+      const updatedUserData = {
+        ...userData,
+        prompt
+      };
+
+      // Update the user data in Redis
+      await redis.json.set('userdata', '$', {
+        ...allUsers,
+        [userEmail]: updatedUserData
+      });
+      
+      // Update our local reference
+      userData.prompt = prompt;
+    }
+
+    // At this point userData.prompt is guaranteed to exist
+    const userPrompt = userData.prompt as string;
+    console.log(`Using personalized prompt for user ${userEmail}: ${userPrompt.substring(0, 100)}...`);
 
     // Extract the actual search query if it's a structured prompt
     let actualSearchQuery = query;
@@ -109,22 +148,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Create a system prompt that emphasizes focusing on the user's question
-    const baseSystemPrompt = userPrompt || `You are a personalized search assistant that summarizes search results in a comprehensive, informative manner similar to Perplexity.
-
-You will be given the text content from multiple search results for a query. 
-Your task is to create ONE unified, coherent summary that synthesizes information from all sources.
-
-INSTRUCTIONS:
-1. Create a comprehensive summary that addresses the search query directly.
-2. Incorporate information from multiple sources, highlighting key points, facts, and insights.
-3. Structure the summary logically, including an introduction, main points, and conclusion.
-4. Use an informative, objective tone like Perplexity.
-5. Do not list individual sources separately - create one unified summary.
-6. Format your response with proper headings and paragraph spacing.
-7. Ensure adequate whitespace between sections for maximum readability.
-8. Keep responses concise while retaining all important information.
-9. Use emojis, dot-jots, and other formatting only when appropriate. Do not rely on them beyond what is necessary.
-10. IMPORTANT: Your primary task is to answer the user's specific question using the search results provided.`;
+    const baseSystemPrompt = userPrompt;
 
     // Create text encoder for the stream
     const encoder = new TextEncoder();

@@ -308,6 +308,7 @@ export default function UserPage({ params }: UserPageProps) {
     setProfileLoading(true);
     
     try {
+      // First save the profile
       const response = await fetch('/api/profile', {
         method: 'POST',
         headers: {
@@ -323,17 +324,34 @@ export default function UserPage({ params }: UserPageProps) {
       
       const data = await response.json();
       
-      if (data.success) {
-        // Update local state with the new profile data
-        setUserName(profileData.name || '');
-        setUserAge(profileData.age || '');
-        setUserLocation(profileData.location || '');
-        setUserAbout(profileData.about || '');
-        
-        setShowProfileModal(false);
-      } else {
+      if (!data.success) {
         throw new Error(data.error || 'Unknown error');
       }
+
+      // After successful profile save, generate tailored prompt
+      const promptRes = await fetch('/api/generate-tailored-prompt', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: userEmail,
+          about: profileData.about,
+          age: profileData.age,
+          location: profileData.location
+        }),
+      });
+
+      if (!promptRes.ok) {
+        console.error('Failed to generate prompt:', await promptRes.text());
+        // Don't throw error here as profile was saved successfully
+      }
+      
+      // Update local state with the new profile data
+      setUserName(profileData.name || '');
+      setUserAge(profileData.age || '');
+      setUserLocation(profileData.location || '');
+      setUserAbout(profileData.about || '');
+      
+      setShowProfileModal(false);
     } catch (error) {
       console.error('Error saving profile:', error);
       alert('Failed to save profile. Please try again.');
