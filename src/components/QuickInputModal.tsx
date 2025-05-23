@@ -1,6 +1,22 @@
 import { useRef, useEffect } from "react";
 
-export default function QuickInputModal({ onClose, position, userEmail, lastQuery, lastAnswer }: { onClose: () => void, position: { x: number, y: number }, userEmail: string, lastQuery: string, lastAnswer: string }) {
+interface QuickInputModalProps {
+  onClose: () => void;
+  position: { x: number, y: number };
+  userEmail: string;
+  lastQuery: string;
+  lastAnswer: string;
+  globalFontSize?: string;
+}
+
+export default function QuickInputModal({ 
+  onClose, 
+  position, 
+  userEmail, 
+  lastQuery, 
+  lastAnswer, 
+  globalFontSize = 'text-base' 
+}: QuickInputModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -45,7 +61,7 @@ export default function QuickInputModal({ onClose, position, userEmail, lastQuer
       <input
         ref={inputRef}
         type="text"
-        className="w-full rounded px-3 py-2 text-base focus:outline-none m-0"
+        className={`w-full rounded px-3 py-2 ${globalFontSize} focus:outline-none m-0`}
         placeholder="ENTER to submit feedback"
         onKeyDown={async e => {
           if (e.key === "Enter") {

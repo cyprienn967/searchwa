@@ -8,21 +8,21 @@ import { SearchResult } from "@/lib/types";
 import Link from "next/link";
 import ProfileModal from '@/components/ProfileModal';
 import QuickInputModal from '@/components/QuickInputModal';
+import { useHistory } from '@/context/HistoryContext';
 import { use } from "react";
-import { getUserById } from "@/lib/redis";
+import TicketButton from '@/components/TicketButton';
 
 type UserPageProps = {
   params: {
-    username: string // This is now actually the user ID, not username
+    username: string
   }
 }
 
 export default function UserPage({ params }: UserPageProps) {
   const router = useRouter();
+  const userId = params.username;
   
-  // Use React.use to properly extract the user ID parameter
-  const userId = use(params).username;
-  
+  const { history: searchHistoryContext, setHistory, addHistoryItem } = useHistory();
   const [userEmail, setUserEmail] = useState<string>("");
   const [userName, setUserName] = useState<string>("");
   const [userLocation, setUserLocation] = useState<string>("");
@@ -397,51 +397,77 @@ export default function UserPage({ params }: UserPageProps) {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-5xl">
-      <SearchBar 
-        onSearch={handleSearch}
-        onClear={handleClearSearch}
-        initialQuery={searchQuery}
-        isSearching={isSearching}
-        disabled={isSearching || searchLimitReached}
-        remainingSearches={remainingSearches}
-      />
-      
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4">
-          <span className="block sm:inline">{error}</span>
+    <>
+      <div className="container mx-auto p-4 max-w-5xl">
+        <div className="mb-8 flex flex-col md:flex-row items-start md:items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold mb-2">Welcome, {userName || userEmail}</h1>
+            <p className="text-gray-600 dark:text-gray-300">
+              {userLocation && `${userLocation} • `}
+              {userAge && `${userAge} years old`}
+            </p>
+            {userAbout && (
+              <p className="mt-2 text-gray-700 dark:text-gray-200 max-w-2xl">
+                {userAbout}
+              </p>
+            )}
+          </div>
+          <div className="mt-4 md:mt-0">
+            <button
+              onClick={() => setShowProfileModal(true)}
+              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors"
+            >
+              Edit Profile
+            </button>
+          </div>
         </div>
-      )}
-      
-      <div ref={resultsRef}>
-        {(searchResults.length > 0 || answer) && (
-          <SearchResults 
-            results={searchResults} 
-            answer={answer}
-            query={searchQuery}
-          />
+        
+        <SearchBar 
+          onSearch={handleSearch}
+          onClear={handleClearSearch}
+          initialQuery={searchQuery}
+          isSearching={isSearching}
+          disabled={isSearching || searchLimitReached}
+          remainingSearches={remainingSearches}
+        />
+        
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mt-4">
+            <span className="block sm:inline">{error}</span>
+          </div>
         )}
+        
+        <div ref={resultsRef}>
+          {(searchResults.length > 0 || answer) && (
+            <SearchResults 
+              results={searchResults} 
+              answer={answer}
+              searchQuery={searchQuery}
+            />
+          )}
+        </div>
+        
+        {/* Profile Modal */}
+        <ProfileModal
+          onSubmit={handleSaveProfile}
+          onClose={() => setShowProfileModal(false)}
+          loading={profileLoading}
+          userEmail={userEmail}
+          inviteCode={localStorage.getItem('steerInviteCode') || ''}
+        />
+        
+        {/* Quick Input Modal */}
+        <QuickInputModal
+          onClose={() => setShowQuickInput(false)}
+          position={quickInputPosition}
+          userEmail={userEmail}
+          lastQuery={searchQuery}
+          lastAnswer={answer}
+        />
       </div>
-      
-      {/* Profile Modal */}
-      <ProfileModal
-        onSubmit={handleSaveProfile}
-        onClose={() => setShowProfileModal(false)}
-        loading={profileLoading}
-        userEmail={userEmail}
-        inviteCode={localStorage.getItem('steerInviteCode') || ''}
-      />
-      
-      {/* Quick Input Modal */}
-      <QuickInputModal
-        isOpen={showQuickInput}
-        onClose={() => setShowQuickInput(false)}
-        onSearch={handleSearch}
-        position={quickInputPosition}
-        userEmail={userEmail}
-        lastQuery={searchQuery}
-        lastAnswer={answer}
-      />
-    </div>
+
+      {/* Feedback Ticket Button */}
+      <TicketButton userEmail={userEmail} />
+    </>
   );
 } 

@@ -8,6 +8,8 @@ import { SearchResult } from "@/lib/types";
 import Link from "next/link";
 import ProfileModal from '@/components/ProfileModal';
 import QuickInputModal from '@/components/QuickInputModal';
+import TicketButton from '@/components/TicketButton';
+import SettingsDropdown from '@/components/SettingsDropdown';
 
 export default function AccountPage() {
   const router = useRouter();
@@ -29,6 +31,7 @@ export default function AccountPage() {
   const [showQuickInput, setShowQuickInput] = useState(false);
   const [quickInputPosition, setQuickInputPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
   const [hasSearched, setHasSearched] = useState(false);
+  const [globalFontSize, setGlobalFontSize] = useState<string>('text-base');
   
   // Add state to track all searches (simple array of search results)
   const [pastSearches, setPastSearches] = useState<Array<{
@@ -167,6 +170,19 @@ export default function AccountPage() {
   useEffect(() => {
     localStorage.setItem('pastSearches', JSON.stringify(pastSearches));
   }, [pastSearches]);
+
+  // Load font size from localStorage on mount
+  useEffect(() => {
+    const savedFontSize = localStorage.getItem('globalFontSize');
+    if (savedFontSize) {
+      setGlobalFontSize(savedFontSize);
+    }
+  }, []);
+
+  const handleFontSizeChange = (size: string) => {
+    setGlobalFontSize(size);
+    localStorage.setItem('globalFontSize', size);
+  };
 
   const handleSearch = async (query: string) => {
     if (!query.trim()) return;
@@ -378,33 +394,52 @@ export default function AccountPage() {
     );
   }
 
+  // Helper function to get font size classes based on text type and global font size
+  const getFontSizeClass = (type: 'header' | 'text' | 'small' | 'title' = 'text') => {
+    const baseSizes = {
+      'text-xs': { header: 'text-sm', text: 'text-xs', small: 'text-xs', title: 'text-xs' },
+      'text-sm': { header: 'text-base', text: 'text-sm', small: 'text-xs', title: 'text-sm' },
+      'text-base': { header: 'text-lg', text: 'text-base', small: 'text-sm', title: 'text-base' },
+      'text-lg': { header: 'text-xl', text: 'text-lg', small: 'text-base', title: 'text-lg' },
+      'text-xl': { header: 'text-2xl', text: 'text-xl', small: 'text-lg', title: 'text-xl' },
+      'text-2xl': { header: 'text-3xl', text: 'text-2xl', small: 'text-xl', title: 'text-2xl' }
+    };
+    
+    return baseSizes[globalFontSize as keyof typeof baseSizes]?.[type] || baseSizes['text-base'][type];
+  };
+
   return (
     <main className="bg-gray-50 dark:bg-gray-900 flex flex-col min-h-screen overflow-x-hidden">
       {/* Header with user info */}
       <nav className="w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-gray-800 sticky top-0 z-50" style={{ borderBottom: "none" }}>
         <div className="flex items-center">
           <Link href="/">
-            <span className="text-2xl font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded transition" style={{ fontFamily: "Times New Roman, Times, serif" }}>
-              steer <span className="ml-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-200 px-2 py-0.5 rounded-md uppercase font-medium">beta</span>
+            <span className={`${getFontSizeClass('title')} font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded transition`} style={{ fontFamily: "Times New Roman, Times, serif" }}>
+              steer <span className={`ml-1 ${getFontSizeClass('small')} bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-200 px-2 py-0.5 rounded-md uppercase font-medium`}>beta</span>
             </span>
           </Link>
         </div>
         <div className="absolute left-1/2 transform -translate-x-1/2">
-          <span className="text-sm text-gray-500 dark:text-gray-400">
+          <span className={`${getFontSizeClass('small')} text-gray-500 dark:text-gray-400`}>
             CTRL+I for feedback!
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-600 dark:text-gray-300 font-semibold">
+          <span className={`${getFontSizeClass('small')} text-gray-600 dark:text-gray-300 font-semibold`}>
             {userName || userEmail}
           </span>
+          <SettingsDropdown 
+            currentFontSize={globalFontSize}
+            onFontSizeChange={handleFontSizeChange}
+          />
           <button
             onClick={() => {
               localStorage.removeItem("steerLoggedIn");
               localStorage.removeItem("steerUserEmail");
+              localStorage.removeItem("globalFontSize");
               router.push("/");
             }}
-            className="inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700"
+            className={`inline-flex items-center px-3 py-1.5 border border-gray-300 ${getFontSizeClass('small')} font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors dark:bg-gray-800 dark:text-gray-300 dark:border-gray-600 dark:hover:bg-gray-700`}
           >
             Logout
           </button>
@@ -415,7 +450,7 @@ export default function AccountPage() {
         {/* Error display */}
         {error && (
           <div className="mb-8">
-            <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 p-4 rounded-lg shadow">
+            <div className={`bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 p-4 rounded-lg shadow ${getFontSizeClass('text')}`}>
               <p>{error}</p>
             </div>
           </div>
@@ -424,7 +459,7 @@ export default function AccountPage() {
         {/* Center search box when no search has been performed */}
         {!hasSearched && (
           <div className="flex flex-col items-center justify-center py-16">
-            <h1 className="text-5xl font-bold mb-12 text-gray-800 dark:text-gray-100" style={{ fontFamily: "Times New Roman, Times, serif" }}>
+            <h1 className={`${getFontSizeClass('header')} font-bold mb-12 text-gray-800 dark:text-gray-100`} style={{ fontFamily: "Times New Roman, Times, serif", fontSize: globalFontSize === 'text-xs' ? '2rem' : globalFontSize === 'text-sm' ? '2.5rem' : globalFontSize === 'text-base' ? '3rem' : globalFontSize === 'text-lg' ? '3.5rem' : globalFontSize === 'text-xl' ? '4rem' : '4.5rem' }}>
               search with steer
             </h1>
             <div className="w-full max-w-2xl">
@@ -462,12 +497,12 @@ export default function AccountPage() {
                       </svg>
                     </button>
                     <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
-                    <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
+                    <h3 className={`${getFontSizeClass('header')} font-medium text-gray-800 dark:text-gray-300`}>
                       Search Results for
                     </h3>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <p className="text-xl font-medium text-gray-900 dark:text-gray-100 break-words">
+                    <p className={`font-medium text-gray-900 dark:text-gray-100 break-words ${getFontSizeClass('text')}`}>
                       "{search.query}"
                     </p>
                   </div>
@@ -478,6 +513,7 @@ export default function AccountPage() {
                     answer={search.answer}
                     searchQuery={search.query}
                     hideQueryHeader={true}
+                    globalFontSize={globalFontSize}
                   />
                 </div>
               </div>
@@ -489,7 +525,7 @@ export default function AccountPage() {
                 <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm py-3 border-b border-gray-200 dark:border-gray-700 -mx-6 px-6 mb-6">
                   <div className="flex items-center mb-2">
                     <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
-                    <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
+                    <h3 className={`${getFontSizeClass('header')} font-medium text-gray-800 dark:text-gray-300`}>
                       Search Results for
                     </h3>
                     <div className="flex items-center gap-2 ml-auto">
@@ -520,7 +556,7 @@ export default function AccountPage() {
                     </div>
                   </div>
                   <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                    <p className="text-xl font-medium text-gray-900 dark:text-gray-100 break-words">
+                    <p className={`font-medium text-gray-900 dark:text-gray-100 break-words ${getFontSizeClass('text')}`}>
                       "{searchQuery}"
                     </p>
                   </div>
@@ -531,6 +567,7 @@ export default function AccountPage() {
                     answer={answer}
                     searchQuery={searchQuery}
                     hideQueryHeader={true}
+                    globalFontSize={globalFontSize}
                   />
                 </div>
               </div>
@@ -541,12 +578,12 @@ export default function AccountPage() {
               <div className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-4xl mb-8 rounded-lg">
                 <div className="flex items-center mb-2">
                   <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
-                  <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
+                  <h3 className={`${getFontSizeClass('header')} font-medium text-gray-800 dark:text-gray-300`}>
                     Search Results for
                   </h3>
                 </div>
                 <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-                  <p className="text-xl font-medium text-gray-900 dark:text-gray-100 break-words">
+                  <p className={`font-medium text-gray-900 dark:text-gray-100 break-words ${getFontSizeClass('text')}`}>
                     "{searchQuery}"
                   </p>
                 </div>
@@ -558,7 +595,7 @@ export default function AccountPage() {
             
             {/* No results state - only show if a search was performed */}
             {pastSearches.length === 0 && searchResults.length === 0 && !answer && !isSearching && !error && (
-              <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8 text-center">
+              <div className={`bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8 text-center ${getFontSizeClass('text')}`}>
                 <p className="text-gray-500 dark:text-gray-400">No results found. Try another search query.</p>
               </div>
             )}
@@ -598,9 +635,13 @@ export default function AccountPage() {
             position={quickInputPosition} 
             userEmail={userEmail} 
             lastQuery={searchQuery} 
-            lastAnswer={answer} 
+            lastAnswer={answer}
+            globalFontSize={globalFontSize}
           />
         )}
+        
+        {/* Feedback Ticket Button */}
+        <TicketButton userEmail={userEmail} globalFontSize={globalFontSize} />
       </div>
     </main>
   );

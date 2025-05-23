@@ -12,10 +12,25 @@ interface SearchResultsProps {
   }>;
   searchQuery?: string;
   hideQueryHeader?: boolean;
+  globalFontSize?: string;
 }
 
-export default function SearchResults({ results, answer, citations, searchQuery, hideQueryHeader }: SearchResultsProps) {
+export default function SearchResults({ results, answer, citations, searchQuery, hideQueryHeader, globalFontSize = 'text-base' }: SearchResultsProps) {
   const sourceRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  // Helper function to get font size classes based on text type
+  const getFontSizeClass = (type: 'header' | 'text' | 'small' | 'title' = 'text') => {
+    const baseSizes = {
+      'text-xs': { header: 'text-sm', text: 'text-xs', small: 'text-xs', title: 'text-xs' },
+      'text-sm': { header: 'text-base', text: 'text-sm', small: 'text-xs', title: 'text-sm' },
+      'text-base': { header: 'text-lg', text: 'text-base', small: 'text-sm', title: 'text-base' },
+      'text-lg': { header: 'text-xl', text: 'text-lg', small: 'text-base', title: 'text-lg' },
+      'text-xl': { header: 'text-2xl', text: 'text-xl', small: 'text-lg', title: 'text-xl' },
+      'text-2xl': { header: 'text-3xl', text: 'text-2xl', small: 'text-xl', title: 'text-2xl' }
+    };
+    
+    return baseSizes[globalFontSize as keyof typeof baseSizes]?.[type] || baseSizes['text-base'][type];
+  };
 
   // Add console logging to debug citations
   console.log('SearchResults props:', { results, answer, citations, searchQuery });
@@ -68,7 +83,7 @@ export default function SearchResults({ results, answer, citations, searchQuery,
       if (headerMatch) {
         const [_, headerMarks, headerContent] = headerMatch;
         const headerLevel = headerMarks.length;
-        const headerClass = `text-${headerLevel === 1 ? 'xl' : headerLevel === 2 ? 'lg' : 'md'} font-bold mt-${headerLevel === 1 ? '6' : '4'} mb-2`;
+        const headerClass = `${getFontSizeClass('header')} font-bold mt-${headerLevel === 1 ? '6' : '4'} mb-2`;
         
         // Process the header content for bold/italic
         const formattedHeader = processTextFormatting(headerContent, key);
@@ -261,12 +276,12 @@ export default function SearchResults({ results, answer, citations, searchQuery,
         <div className="mb-4">
           <div className="flex items-center mb-2">
             <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
-            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
+            <h3 className={`${getFontSizeClass('header')} font-medium text-gray-800 dark:text-gray-300`}>
               Search Results for
             </h3>
           </div>
           <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
-            <p className="text-xl font-medium text-gray-900 dark:text-gray-100 break-words">
+            <p className={`${getFontSizeClass('text')} font-medium text-gray-900 dark:text-gray-100 break-words`}>
               "{searchQuery}"
             </p>
           </div>
@@ -278,7 +293,7 @@ export default function SearchResults({ results, answer, citations, searchQuery,
         <div className="card bg-white dark:bg-gray-800 rounded-lg shadow-md border border-gray-200 dark:border-gray-700 mb-6 overflow-hidden">
           <div className="p-6">
             <div className="prose dark:prose-dark max-w-none">
-              <div className="text-base leading-relaxed text-gray-800 dark:text-gray-200">
+              <div className={`${getFontSizeClass('text')} leading-relaxed text-gray-800 dark:text-gray-200`}>
                 {renderAnswerWithCitations(answer)}
               </div>
             </div>
@@ -291,10 +306,10 @@ export default function SearchResults({ results, answer, citations, searchQuery,
         <div>
           <div className="flex items-center mb-4 px-2 pb-2 border-b border-gray-200 dark:border-gray-700">
             <div className="w-1 h-5 bg-blue-500 rounded-full mr-3"></div>
-            <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
+            <h3 className={`${getFontSizeClass('header')} font-medium text-gray-800 dark:text-gray-300`}>
               Sources
             </h3>
-            <div className="ml-auto text-sm text-gray-500 dark:text-gray-400">
+            <div className={`ml-auto ${getFontSizeClass('small')} text-gray-500 dark:text-gray-400`}>
               {results.length} {results.length === 1 ? 'source' : 'sources'} found
             </div>
           </div>
@@ -313,14 +328,14 @@ export default function SearchResults({ results, answer, citations, searchQuery,
                   className="flex items-center h-[72px] p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group-hover:border-blue-300 dark:group-hover:border-blue-700 group-hover:shadow-md"
                 >
                   <div className="ml-3 flex-1 min-w-0 overflow-hidden">
-                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate">
+                    <div className={`${getFontSizeClass('title')} font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400 truncate`}>
                       {result.title}
                     </div>
-                    <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                    <div className={`${getFontSizeClass('small')} text-gray-500 dark:text-gray-400 truncate`}>
                       {result.displayUrl}
                     </div>
                   </div>
-                  <span className="ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs text-white bg-blue-500 rounded-full font-medium group-hover:bg-blue-600">{index + 1}</span>
+                  <span className={`ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center ${getFontSizeClass('small')} text-white bg-blue-500 rounded-full font-medium group-hover:bg-blue-600`}>{index + 1}</span>
                 </a>
               </div>
             ))}
