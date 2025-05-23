@@ -11,21 +11,58 @@ interface SearchResultsProps {
     url: string;
   }>;
   searchQuery?: string;
+  hideQueryHeader?: boolean;
 }
 
-export default function SearchResults({ results, answer, citations, searchQuery }: SearchResultsProps) {
+export default function SearchResults({ results, answer, citations, searchQuery, hideQueryHeader }: SearchResultsProps) {
   const sourceRefs = useRef<(HTMLDivElement | null)[]>([]);
 
+  // Add console logging to debug citations
+  console.log('SearchResults props:', { results, answer, citations, searchQuery });
+  
   // Helper to parse answer and replace markdown formatting and citations
   function renderAnswerWithCitations(text: string) {
     if (!text) return [];
 
+    console.log('Rendering answer text:', text);
+    
+    // First, do a simple scan to find citation patterns
+    // Common patterns in AI-generated text
+    const simpleCitationRegex = /\[(\d+)\]/g;
+    let hasCitations = simpleCitationRegex.test(text);
+    console.log('Text has citations:', hasCitations);
+    
+    // If no citations are found with standard patterns, try to manually add them
+    if (!hasCitations && results.length > 0) {
+      // Check if there are any numbers that might be references
+      const possibleCitationsRegex = /\b(\d+)\b/g;
+      const matches = [...text.matchAll(possibleCitationsRegex)];
+      const possibleCitations = matches
+        .map(match => parseInt(match[1], 10))
+        .filter(num => num > 0 && num <= results.length);
+      
+      console.log('Possible implicit citations:', possibleCitations);
+      
+      if (possibleCitations.length > 0) {
+        // We found numbers that might be references, convert them to citation format
+        let modifiedText = text;
+        for (const num of possibleCitations) {
+          // Find instances of this number
+          const numRegex = new RegExp(`\\b${num}\\b`, 'g');
+          modifiedText = modifiedText.replace(numRegex, `[${num}]`);
+        }
+        text = modifiedText;
+        console.log('Modified text with citations:', text);
+      }
+    }
+    
     // First, split the text by newlines to handle headers and paragraphs
     const lines = text.split('\n');
     const processedLines: React.ReactNode[] = [];
     let key = 0;
 
     lines.forEach((line, lineIndex) => {
+      console.log(`Processing line ${lineIndex}:`, line);
       // Process headers first
       const headerMatch = line.match(/^(#{1,6})\s+(.+)$/);
       if (headerMatch) {
@@ -62,56 +99,79 @@ export default function SearchResults({ results, answer, citations, searchQuery 
 
   // Process a line of text, handling citations and text formatting
   function processLineWithCitations(line: string, startKey: number): { nodes: React.ReactNode[], keyCount: number } {
-    // Split by citation markers to preserve them
-    const citationRegex = /\[(\d+)\]/g;
-    const segments: { text: string; isCitation: boolean; citationNum?: number }[] = [];
+    // Basic citation pattern is [number]
+    const simpleCitationRegex = /\[(\d+)\]/g;
+    
+    console.log('Checking line for citations:', line);
+    
+    const segments: { text: string; isCitation: boolean; citationNum?: number; originalText: string }[] = [];
     
     let lastIndex = 0;
     let match;
     
-    // Extract all citations and regular text segments
-    while ((match = citationRegex.exec(line)) !== null) {
+    // First look for simple [number] citations
+    while ((match = simpleCitationRegex.exec(line)) !== null) {
       const idx = match.index;
       const citationNum = parseInt(match[1], 10);
       
+      console.log(`Found citation: [${citationNum}]`);
+      
       // Add text before citation
       if (idx > lastIndex) {
-        segments.push({ text: line.slice(lastIndex, idx), isCitation: false });
+        segments.push({ text: line.slice(lastIndex, idx), isCitation: false, originalText: line.slice(lastIndex, idx) });
       }
       
       // Add citation
-      segments.push({ text: `[${citationNum}]`, isCitation: true, citationNum });
+      segments.push({ text: match[0], isCitation: true, citationNum, originalText: match[0] });
       
       lastIndex = idx + match[0].length;
     }
     
     // Add remaining text
     if (lastIndex < line.length) {
-      segments.push({ text: line.slice(lastIndex), isCitation: false });
+      segments.push({ text: line.slice(lastIndex), isCitation: false, originalText: line.slice(lastIndex) });
     }
     
-    // Process each text segment for markdown
+    console.log('Processed segments:', segments);
+    
+    // Process each text segment
     const parts: React.ReactNode[] = [];
     let key = startKey;
     
     segments.forEach(segment => {
-      if (segment.isCitation) {
-        // Render citations as clickable spans
+      if (segment.isCitation && segment.citationNum !== undefined) {
+        // Render citations as clickable buttons
+        console.log(`Creating citation button for: ${segment.citationNum}`);
+        
+        // Adjust citation number to be within bounds
+        const citationIndex = Math.min(Math.max(0, (segment.citationNum as number) - 1), results.length > 0 ? results.length - 1 : 0);
+        
         parts.push(
-          <span
+          <button
             key={`citation-${key++}`}
-            className="text-blue-600 dark:text-blue-400 cursor-pointer hover:underline font-semibold"
+            className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 mx-0.5 text-xs font-semibold rounded bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-800/30 dark:text-blue-400 dark:hover:bg-blue-800/50 cursor-pointer transition-colors"
             onClick={() => {
-              const ref = sourceRefs.current[(segment.citationNum as number) - 1];
-              if (ref) {
-                ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                ref.classList.add('ring-2', 'ring-blue-400');
-                setTimeout(() => ref.classList.remove('ring-2', 'ring-blue-400'), 1200);
+              // Only try to scroll if we have results
+              if (results.length > 0) {
+                const ref = sourceRefs.current[citationIndex];
+                if (ref) {
+                  // Highlight the source
+                  ref.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  ref.classList.add('ring-2', 'ring-blue-400');
+                  setTimeout(() => ref.classList.remove('ring-2', 'ring-blue-400'), 1200);
+                  
+                  // If the result has a URL, open it in a new tab
+                  const result = results[citationIndex];
+                  if (result && result.url) {
+                    window.open(result.url, '_blank', 'noopener,noreferrer');
+                  }
+                }
               }
             }}
+            title="Click to view source"
           >
-            {segment.text}
-          </span>
+            {segment.citationNum}
+          </button>
         );
       } else {
         // Process regular text for markdown formatting
@@ -197,7 +257,7 @@ export default function SearchResults({ results, answer, citations, searchQuery 
   return (
     <div className="space-y-6 w-full max-w-none">
       {/* Search query display */}
-      {searchQuery && (
+      {searchQuery && !hideQueryHeader && (
         <div className="mb-4">
           <div className="flex items-center mb-2">
             <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
@@ -244,23 +304,23 @@ export default function SearchResults({ results, answer, citations, searchQuery 
               <div
                 key={index}
                 ref={setSourceRef(index)}
-                className="transition-all"
+                className="transition-all group"
               >
                 <a 
                   href={result.url}
                   target="_blank" 
                   rel="noopener noreferrer" 
-                  className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                  className="flex items-center p-3 border border-gray-200 dark:border-gray-700 rounded-md hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors group-hover:border-blue-300 dark:group-hover:border-blue-700 group-hover:shadow-md"
                 >
                   <div className="ml-3 flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate text-gray-800 dark:text-gray-200">
+                    <div className="text-sm font-medium text-gray-800 dark:text-gray-200 group-hover:text-blue-600 dark:group-hover:text-blue-400">
                       {result.title}
                     </div>
                     <div className="text-xs text-gray-500 dark:text-gray-400 truncate">
                       {result.displayUrl}
                     </div>
                   </div>
-                  <span className="ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs text-white bg-blue-500 rounded-full">{index + 1}</span>
+                  <span className="ml-2 flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs text-white bg-blue-500 rounded-full font-medium group-hover:bg-blue-600">{index + 1}</span>
                 </a>
               </div>
             ))}

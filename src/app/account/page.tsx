@@ -13,25 +13,44 @@ export default function AccountPage() {
   const router = useRouter();
   const [userEmail, setUserEmail] = useState<string>("");
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('lastSearchQuery') || "";
+    }
+    return "";
+  });
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [answer, setAnswer] = useState<string>("");
   const [isSearching, setIsSearching] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchCount, setSearchCount] = useState<number>(0);
-  const [searchLimitReached, setSearchLimitReached] = useState<boolean>(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [profileLoading, setProfileLoading] = useState(false);
   const [showQuickInput, setShowQuickInput] = useState(false);
-  const [quickInputPosition, setQuickInputPosition] = useState<{ x: number, y: number }>({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+  const [quickInputPosition, setQuickInputPosition] = useState<{ x: number, y: number }>({ x: 0, y: 0 });
   const [hasSearched, setHasSearched] = useState(false);
+  
+  // Add state to track all searches (simple array of search results)
+  const [pastSearches, setPastSearches] = useState<Array<{
+    query: string;
+    results: SearchResult[];
+    answer: string;
+  }>>([]);
   
   const abortControllerRef = useRef<AbortController | null>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
+  const bottomRef = useRef<HTMLDivElement>(null);
 
-  const MAX_SEARCHES = 5;
-  const remainingSearches = MAX_SEARCHES - searchCount;
-  
+  // Initialize quickInputPosition after mount
+  useEffect(() => {
+    // Only run on client side
+    if (typeof window !== 'undefined') {
+      setQuickInputPosition({ 
+        x: window.innerWidth / 2, 
+        y: window.innerHeight / 2 
+      });
+    }
+  }, []);
+
   // Check authentication on mount
   useEffect(() => {
     const checkAuth = () => {
@@ -120,11 +139,23 @@ export default function AccountPage() {
     };
   }, []);
 
+  // Add effect to persist search state
+  useEffect(() => {
+    if (searchQuery) {
+      localStorage.setItem('lastSearchQuery', searchQuery);
+    }
+  }, [searchQuery]);
+
+  useEffect(() => {
+    localStorage.setItem('pastSearches', JSON.stringify(pastSearches));
+  }, [pastSearches]);
+
   const handleSearch = async (query: string) => {
-    if (searchLimitReached || searchCount >= MAX_SEARCHES) {
-      setError("You have reached the maximum number of searches. Please try again later.");
-      setSearchLimitReached(true);
-      return;
+    if (!query.trim()) return;
+
+    // If this is the first search (coming from the search box), reset past searches
+    if (!hasSearched) {
+      setPastSearches([]);
     }
 
     // Set hasSearched to true when a search is performed
@@ -160,6 +191,19 @@ export default function AccountPage() {
       if (!response.ok) {
         throw new Error('Search failed');
       }
+
+      // Save current results before starting a new search
+      if (searchResults.length > 0 || answer) {
+        setPastSearches(prev => [...prev, {
+          query: searchQuery,
+          results: searchResults,
+          answer: answer
+        }]);
+      }
+
+      // Reset current results for the new search
+      setSearchResults([]);
+      setAnswer('');
 
       // Check if the response is a stream
       if (response.headers.get('Content-Type')?.includes('text/event-stream')) {
@@ -219,27 +263,11 @@ export default function AccountPage() {
             }
           }
         }
-        
-        // Increment search count and check if limit is reached
-        const newSearchCount = searchCount + 1;
-        setSearchCount(newSearchCount);
-        if (newSearchCount >= MAX_SEARCHES) {
-          setSearchLimitReached(true);
-        }
-      } else {
-        // Fallback to non-streaming response (for backward compatibility)
-        const data = await response.json();
-        setSearchResults(data.results);
-        setAnswer(data.answer);
-        
-        // Increment search count and check if limit is reached
-        const newSearchCount = searchCount + 1;
-        setSearchCount(newSearchCount);
-        if (newSearchCount >= MAX_SEARCHES) {
-          setSearchLimitReached(true);
-        }
-        
-        setIsSearching(false);
+
+        // Scroll to the new results
+        setTimeout(() => {
+          bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+        }, 100);
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') {
@@ -287,9 +315,9 @@ export default function AccountPage() {
   }
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 flex flex-col min-h-screen overflow-x-hidden overflow-y-auto max-h-screen">
+    <main className="bg-gray-50 dark:bg-gray-900 flex flex-col min-h-screen overflow-x-hidden">
       {/* Header with user info */}
-      <nav className="w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-gray-800" style={{ borderBottom: "none" }}>
+      <nav className="w-full flex items-center justify-between px-8 py-4 bg-white dark:bg-gray-800 sticky top-0 z-50" style={{ borderBottom: "none" }}>
         <div className="flex items-center">
           <Link href="/">
             <span className="text-2xl font-semibold text-black dark:text-white hover:bg-gray-100 dark:hover:bg-gray-700 px-2 py-1 rounded transition" style={{ fontFamily: "Times New Roman, Times, serif" }}>
@@ -314,22 +342,13 @@ export default function AccountPage() {
         </div>
       </nav>
       
-      <div className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
-        {/* Main content */}
-        
+      <div className="flex-1 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full relative">
         {/* Error display */}
         {error && (
           <div className="mb-8">
             <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200 p-4 rounded-lg shadow">
               <p>{error}</p>
             </div>
-          </div>
-        )}
-        
-        {/* Loading state */}
-        {isSearching && (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
           </div>
         )}
         
@@ -346,7 +365,7 @@ export default function AccountPage() {
                   initialQuery=""
                   isConversationMode={true}
                   centered={true}
-                  disabled={isSearching || searchLimitReached}
+                  disabled={isSearching}
                 />
               </div>
             </div>
@@ -355,24 +374,86 @@ export default function AccountPage() {
         
         {/* Search results container - only shown after search */}
         {hasSearched && (
-          <div ref={resultsRef} className="flex-1">
-            {/* Search results */}
-            {searchResults.length > 0 && (
-              <div className="mb-8" style={{minHeight: 'calc(100vh - 120px)'}}>
-                <div className="h-full overflow-y-auto">
-                  <div className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-4xl">
-                    <SearchResults 
-                      results={searchResults}
-                      answer={answer}
-                      searchQuery={searchQuery}
-                    />
+          <div className="mb-20">
+            {/* Display past searches */}
+            {pastSearches.map((search, index) => (
+              <div 
+                key={index} 
+                className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-4xl mb-6 border-b-4 border-gray-100 dark:border-gray-700 pb-6 relative rounded-lg"
+              >
+                <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm py-3 border-b border-gray-200 dark:border-gray-700 -mx-6 px-6 mb-6">
+                  <div className="flex items-center mb-2">
+                    <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
+                    <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
+                      Search Results for
+                    </h3>
                   </div>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <p className="text-xl font-medium text-gray-900 dark:text-gray-100 break-words">
+                      "{search.query}"
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <SearchResults 
+                    results={search.results}
+                    answer={search.answer}
+                    searchQuery={search.query}
+                    hideQueryHeader={true}
+                  />
+                </div>
+              </div>
+            ))}
+            
+            {/* Display current search results */}
+            {(searchResults.length > 0 || answer) && (
+              <div ref={resultsRef} className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-4xl mb-8 relative rounded-lg">
+                <div className="sticky top-0 z-10 bg-white/95 dark:bg-gray-800/95 backdrop-blur-sm py-3 border-b border-gray-200 dark:border-gray-700 -mx-6 px-6 mb-6">
+                  <div className="flex items-center mb-2">
+                    <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
+                    <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
+                      Search Results for
+                    </h3>
+                  </div>
+                  <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <p className="text-xl font-medium text-gray-900 dark:text-gray-100 break-words">
+                      "{searchQuery}"
+                    </p>
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <SearchResults 
+                    results={searchResults}
+                    answer={answer}
+                    searchQuery={searchQuery}
+                    hideQueryHeader={true}
+                  />
+                </div>
+              </div>
+            )}
+            
+            {/* Loading state */}
+            {isSearching && (
+              <div className="bg-white dark:bg-gray-800 p-6 pt-4 mx-auto max-w-4xl mb-8 rounded-lg">
+                <div className="flex items-center mb-2">
+                  <div className="w-1 h-5 bg-purple-500 rounded-full mr-3"></div>
+                  <h3 className="text-lg font-medium text-gray-800 dark:text-gray-300">
+                    Search Results for
+                  </h3>
+                </div>
+                <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                  <p className="text-xl font-medium text-gray-900 dark:text-gray-100 break-words">
+                    "{searchQuery}"
+                  </p>
+                </div>
+                <div className="mt-4 flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
                 </div>
               </div>
             )}
             
             {/* No results state - only show if a search was performed */}
-            {searchQuery && searchResults.length === 0 && !isSearching && !error && (
+            {pastSearches.length === 0 && searchResults.length === 0 && !answer && !isSearching && !error && (
               <div className="bg-white dark:bg-gray-800 shadow-md rounded-lg p-6 mb-8 text-center">
                 <p className="text-gray-500 dark:text-gray-400">No results found. Try another search query.</p>
               </div>
@@ -382,20 +463,18 @@ export default function AccountPage() {
 
         {/* Just the search bar at the bottom - no padding, nothing around it */}
         {hasSearched && (
-          <>
-            <div className="fixed bottom-2 left-0 right-0 z-50 flex justify-center">
-              <div className="w-full max-w-3xl border-2 border-gray-300 dark:border-gray-600 shadow-md rounded-xl overflow-hidden">
+          <div className="fixed bottom-2 left-0 right-0 z-50 flex justify-center">
+            <div className="w-full max-w-3xl mx-2">
+              <div className="border-2 border-gray-300 dark:border-gray-600 shadow-md rounded-xl overflow-hidden bg-white dark:bg-gray-900">
                 <SearchBar 
                   onSearch={handleSearch} 
-                  initialQuery={searchQuery}
+                  initialQuery=""
                   isConversationMode={true}
-                  disabled={isSearching || searchLimitReached}
+                  disabled={isSearching}
                 />
               </div>
             </div>
-            {/* White bar below search bar */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 h-2 bg-white dark:bg-gray-900"></div>
-          </>
+          </div>
         )}
 
         {/* Profile Modal */}
@@ -416,6 +495,6 @@ export default function AccountPage() {
           />
         )}
       </div>
-    </div>
+    </main>
   );
 } 
