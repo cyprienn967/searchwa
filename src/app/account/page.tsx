@@ -419,10 +419,32 @@ export default function AccountPage() {
             </span>
           </Link>
         </div>
-        <div className="absolute left-1/2 transform -translate-x-1/2">
+        <div className="absolute left-1/2 transform -translate-x-1/2 flex items-center gap-1">
           <span className={`${getFontSizeClass('small')} text-gray-500 dark:text-gray-400`}>
             CTRL+I for feedback!
           </span>
+          <button
+            className="group relative inline-block"
+            aria-label="Feedback information"
+          >
+            <svg 
+              className="w-4 h-4 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300" 
+              fill="none" 
+              stroke="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                strokeWidth={2} 
+                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" 
+              />
+            </svg>
+            <div className="invisible group-hover:visible absolute left-1/2 -translate-x-1/2 top-full mt-2 w-64 p-2 bg-gray-600 text-white text-xs rounded shadow-lg z-50">
+              Give feedback for steer's LLM to improve its responses to your queries.
+              <div className="absolute left-1/2 -top-1 -translate-x-1/2 w-2 h-2 bg-gray-600 transform rotate-45"></div>
+            </div>
+          </button>
         </div>
         <div className="flex items-center gap-4">
           <span className={`${getFontSizeClass('small')} text-gray-600 dark:text-gray-300 font-semibold`}>

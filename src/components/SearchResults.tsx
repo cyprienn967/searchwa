@@ -316,7 +316,7 @@ export default function SearchResults({ results, answer, citations, searchQuery,
       {results.length > 0 && (
         <div>
           <div className="flex items-center mb-4 px-2 pb-2 border-b border-gray-200 dark:border-gray-700">
-            <div className="w-1 h-5 bg-blue-500 rounded-full mr-3"></div>
+            <div className="w-1 h-5 bg-pink-500 rounded-full mr-3"></div>
             <h3 className={`${getFontSizeClass('header')} font-medium text-gray-800 dark:text-gray-300`}>
               Sources
             </h3>
