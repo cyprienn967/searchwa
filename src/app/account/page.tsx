@@ -489,7 +489,7 @@ export default function AccountPage() {
                 <SearchBar 
                   onSearch={handleSearch} 
                   initialQuery=""
-                  isConversationMode={true}
+                  isConversationMode={false}
                   centered={true}
                   disabled={isSearching}
                 />
